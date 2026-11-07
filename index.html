@@ -1,0 +1,1696 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<script>
+/* FIRSTNAME-ONLY v1 (16 Oct 2026): the sign-in keeps the pupil's first name only.
+   A one-letter initial typed after it is kept ("Ahmed A"), so two pupils with the same first name stay apart.
+   Also rewrites saves/loads to the class store, so a remembered full name cannot recreate a surname record.
+   Beyond the Classroom (sc-*) books are left alone. */
+(function(){
+  function fn(s){
+    s=String(s==null?'':s).replace(/\s+/g,' ').trim(); if(!s) return s;
+    if(/^yu luo(\s|$)/i.test(s)) return s.slice(0,6);
+    var w=s.split(' '); if(w.length<2) return s;
+    if(w.length===2 && w[1].replace(/[^A-Za-z]/g,'').length===1) return w[0]+' '+w[1].replace(/[^A-Za-z]/g,'');
+    return w[0];
+  }
+  window.__firstNameOnly=fn;
+  var ST='vestigia-store.mrbeasley930.workers.dev';
+  function skip(b){ return /^sc-/.test(String(b||'')); }
+  function fixKey(k){ k=String(k); var p=k.split('::'); if(p.length<3||skip(p[0])) return k; return p[0]+'::'+p[1]+'::'+fn(p.slice(2).join('::')); }
+  var of=window.fetch;
+  if(of) window.fetch=function(input,init){
+    try{
+      var url=typeof input==='string'?input:(input&&input.url)||'';
+      if(url.indexOf(ST)>=0 && !/[?&]all=1/.test(url)){
+        var u=new URL(url,location.href), k=u.searchParams.get('key');
+        if(k){ var nk=fixKey(k); if(nk!==k){ u.searchParams.set('key',nk); input=(typeof input==='string')?u.toString():new Request(u.toString(),input); } }
+        if(init && typeof init.body==='string' && /post|put/i.test(init.method||'')){
+          var b=JSON.parse(init.body);
+          if(b && b.key && !skip(b.book||String(b.key).split('::')[0])){
+            b.key=fixKey(b.key);
+            if(typeof b.cand==='string') b.cand=fn(b.cand);
+            if(b.data && typeof b.data==='object' && typeof b.data.name==='string') b.data.name=fn(b.data.name);
+            init=Object.assign({},init,{body:JSON.stringify(b)});
+          }
+        }
+      }
+    }catch(e){}
+    return of.call(this,input,init);
+  };
+  var IDS=['g-cand','sg-cand','cand','gName'];
+  function tidy(t){ IDS.forEach(function(id){ var el=document.getElementById(id); if(el && el!==t && el.value && /\S\s+\S/.test(el.value)) el.value=fn(el.value); }); }
+  document.addEventListener('click',function(e){ tidy(e.target); },true);
+  document.addEventListener('keydown',function(e){ if(e.key==='Enter') tidy(null); },true);
+  document.addEventListener('submit',function(){ tidy(null); },true);
+  document.addEventListener('change',function(){ tidy(null); },true);
+})();
+</script>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Love and Relationships: The Four Voices</title>
+<style>
+  :root{
+    --ink:#1c1a22; --muted:#5d5668; --line:#d9d2e0; --bg:#f6f3f0; --card:#ffffff;
+    --accent:#6a2c5a; --accent2:#2c6a5f; --gold:#9a7a2e; --soft:#efe9f0; --softg:#e7f0ed;
+    --shadow:0 1px 3px rgba(40,20,50,.08),0 6px 20px rgba(40,20,50,.06);
+    --ok:#2c6a5f; --no:#a23a2a;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:"Segoe UI",system-ui,-apple-system,Helvetica,Arial,sans-serif;
+    color:var(--ink);background:var(--bg);line-height:1.55;font-size:16px}
+  body.easyread{font-family:Verdana,Geneva,sans-serif;letter-spacing:.02em;line-height:1.8;background:#fbf7ef}
+  body.easyread .frag{font-family:Verdana,Geneva,sans-serif}
+  .wrap{max-width:920px;margin:0 auto;padding:0 20px 90px}
+  .layout{display:flex;gap:22px;max-width:1320px;margin:0 auto;padding:0 20px 90px;align-items:flex-start}
+  .col-left{flex:1 1 0;min-width:0;max-width:940px}
+  .col-notes{flex:0 0 360px;position:sticky;top:56px;align-self:flex-start}
+  .col-notes .npanel{display:flex;flex-direction:column;background:var(--card);border:1px solid var(--line);border-top:4px solid var(--accent2);border-radius:14px;box-shadow:var(--shadow);overflow:hidden;max-height:calc(100vh - 76px)}
+  .col-notes .nhead{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:14px 16px 0}
+  .col-notes .ntitle{font-size:17px;font-weight:700;color:var(--accent2)}
+  .col-notes .nwc{font-size:12px;color:var(--muted)}
+  .col-notes .nhint{font-size:12.5px;color:var(--muted);margin:6px 16px 11px;line-height:1.45}
+  .col-notes textarea{flex:1 1 auto;min-height:320px;border:none;border-top:1px solid var(--line);border-radius:0;padding:13px 16px;font-size:14.5px;line-height:1.6;resize:none;background:#fffdf9}
+  .col-notes textarea:focus{outline:none;background:#fffefb}
+  body.easyread .col-notes textarea{font-family:Verdana,Geneva,sans-serif}
+  header.masthead{background:linear-gradient(135deg,#3a1733,#6a2c5a 60%,#2c6a5f);color:#fff;padding:26px 20px 22px}
+  .masthead .inner{max-width:1320px;margin:0 auto}
+  .eyebrow{font-size:12.5px;letter-spacing:.14em;text-transform:uppercase;opacity:.85;margin:0 0 6px}
+  h1{font-size:26px;margin:0 0 6px;font-weight:700;line-height:1.2}
+  .unitline{font-size:14px;opacity:.92;margin:0}
+  .toolbar{position:sticky;top:0;z-index:50;background:#fff;border-bottom:1px solid var(--line);box-shadow:0 2px 8px rgba(40,20,50,.06)}
+  .toolbar .inner{max-width:1320px;margin:0 auto;padding:9px 20px;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  .toolbar label{font-size:13px;color:var(--muted);font-weight:600}
+  .toolbar input[type=text]{font-size:14px;padding:7px 10px;border:1px solid var(--line);border-radius:8px;min-width:150px}
+  .btn{font-size:13px;font-weight:600;border:1px solid var(--accent);background:var(--accent);color:#fff;padding:8px 12px;border-radius:8px;cursor:pointer}
+  .btn.ghost{background:#fff;color:var(--accent)}
+  .btn.warn{border-color:#a23;color:#a23;background:#fff}
+  .btn:hover{filter:brightness(1.05)}
+  .savestate{font-size:12.5px;color:var(--muted);margin-left:auto}
+  .savestate b{color:var(--accent2)}
+  section{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px 24px;margin:20px 0;box-shadow:var(--shadow)}
+  .sechead{display:flex;align-items:baseline;justify-content:space-between;gap:14px;margin:0 0 4px}
+  h2{font-size:20px;margin:0;color:var(--accent)}
+  .mins{font-size:12px;color:var(--muted);white-space:nowrap;border:1px solid var(--line);border-radius:20px;padding:3px 10px}
+  .tagx{font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#fff;background:var(--gold);border-radius:6px;padding:2px 8px;margin-left:8px}
+  .obj{font-size:14.5px;color:var(--muted);margin:2px 0 14px}
+  h3{font-size:16px;margin:18px 0 6px}
+  p{margin:8px 0}
+  .frag{font-family:Georgia,"Times New Roman",serif;font-size:17px;line-height:1.6;background:var(--soft);border-left:4px solid var(--accent);border-radius:8px;padding:16px 20px;margin:12px 0;white-space:pre-line}
+  .frag.green{background:var(--softg);border-left-color:var(--accent2)}
+  .frag .speech{font-style:italic}
+  .annot{cursor:pointer;border-bottom:2px dotted var(--accent);font-weight:600;color:var(--accent)}
+  .frag.green .annot{border-color:var(--accent2);color:var(--accent2)}
+  .annot:focus{outline:2px solid var(--accent2);outline-offset:2px}
+  .notebox{display:none;font-family:"Segoe UI",sans-serif;font-size:14px;line-height:1.5;background:#fff;border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin:10px 0}
+  .notebox.show{display:block}
+  .notebox .tag{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#fff;background:var(--accent);border-radius:5px;padding:2px 7px;margin-right:8px}
+  .grk{font-family:"Palatino Linotype",Georgia,serif;font-style:normal;color:var(--accent2);font-weight:600}
+  .gloss{border-bottom:1px dashed var(--gold);color:var(--gold);cursor:help;font-weight:600}
+  .gloss:focus{outline:2px solid var(--gold);outline-offset:2px}
+  .glossTip{position:fixed;z-index:200;max-width:300px;background:#2b2330;color:#fff;font-size:13px;line-height:1.45;padding:10px 13px;border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.28);display:none}
+  .glossTip.show{display:block}
+  .glossTip b{color:#f0d68c;display:block;margin-bottom:3px}
+  .hint{font-size:13px;color:var(--muted);font-style:italic}
+  details{border:1px solid var(--line);border-radius:10px;padding:0 14px;margin:12px 0;background:#fff}
+  details>summary{cursor:pointer;font-weight:600;color:var(--accent2);padding:11px 0;list-style:none}
+  details>summary::-webkit-details-marker{display:none}
+  details>summary::before{content:"\25B6";font-size:11px;margin-right:9px;color:var(--accent2)}
+  details[open]>summary::before{content:"\25BC"}
+  details .body{padding:0 0 14px}
+  .cards{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:12px 0}
+  .pcard{border:1px solid var(--line);border-radius:12px;padding:14px 16px;background:#fbfafc}
+  .pcard h4{margin:0 0 6px;font-size:15px;color:var(--gold)}
+  .pcard p{font-size:14px;margin:6px 0}
+  .qbox{margin:12px 0}
+  .qbox .q{font-weight:600;margin:0 0 6px}
+  textarea{width:100%;font-family:"Segoe UI",sans-serif;font-size:14.5px;line-height:1.5;border:1px solid var(--line);border-radius:8px;padding:11px 12px;resize:vertical;min-height:74px}
+  body.easyread textarea{font-family:Verdana,Geneva,sans-serif}
+  textarea:focus,input:focus{outline:2px solid var(--accent2);outline-offset:1px}
+  .wc{font-size:12px;color:var(--muted);text-align:right;margin:3px 2px 0}
+  .rung{border:1px solid var(--line);border-left:4px solid var(--gold);border-radius:8px;padding:12px 14px;margin:12px 0;background:#fffdf8}
+  .rung .rname{font-weight:700;color:var(--gold);font-size:13px;letter-spacing:.05em;text-transform:uppercase}
+  .rung .stem{font-size:13.5px;color:var(--muted);font-style:italic;margin:4px 0 8px}
+  .given{background:#f3f0f6;border-radius:6px;padding:9px 12px;font-size:14.5px;margin:6px 0}
+  .given .gl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--accent);display:block;margin-bottom:3px}
+  ul.check{list-style:none;padding:0;margin:8px 0}
+  ul.check li{display:flex;gap:9px;align-items:flex-start;padding:5px 0;font-size:14px}
+  ul.check input{margin-top:3px;width:17px;height:17px;flex:0 0 auto}
+  .callout{background:var(--softg);border-radius:10px;padding:12px 16px;font-size:14.5px;margin:12px 0}
+  .small{font-size:13px;color:var(--muted)}
+  .pillrow{display:flex;flex-wrap:wrap;gap:7px;margin:8px 0}
+  .pill{font-size:12.5px;background:var(--soft);border:1px solid var(--line);border-radius:20px;padding:4px 11px}
+  .checkbtn{margin-top:8px}
+  .feedback{display:none;margin-top:10px;border-radius:8px;padding:10px 14px;font-size:14px;background:#f7f5fa;border:1px solid var(--line)}
+  .feedback.show{display:block}
+  .feedback ul{margin:6px 0 0;padding-left:0;list-style:none}
+  .feedback li{padding:3px 0}
+  .feedback .yes{color:var(--ok);font-weight:600}
+  .feedback .miss{color:var(--no);font-weight:600}
+  .feedback .verdict{font-weight:700;margin-bottom:4px}
+  .exem{border:1px solid var(--line);border-radius:10px;padding:12px 16px;margin:10px 0}
+  .exem.weak{border-left:4px solid var(--no);background:#fdf6f4}
+  .exem.strong{border-left:4px solid var(--ok);background:#f3f8f6}
+  .exem h4{margin:0 0 6px;font-size:14px}
+  .exem .lvl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:2px 8px;border-radius:5px;color:#fff}
+  .exem.weak .lvl{background:var(--no)}
+  .exem.strong .lvl{background:var(--ok)}
+  .symptom{display:flex;flex-wrap:wrap;gap:7px;margin:10px 0}
+  .symptom .s{font-size:12.5px;background:#fff;border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:7px;padding:4px 10px}
+  table.bands{width:100%;border-collapse:collapse;font-size:13.5px;margin:10px 0}
+  table.bands th,table.bands td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+  table.bands th{background:var(--soft)}
+  @media(max-width:980px){
+    .layout{flex-direction:column}
+    .col-notes{position:static;flex:1 1 auto;width:100%;top:auto}
+    .col-notes .npanel{max-height:none}
+    .col-notes textarea{min-height:220px}
+  }
+  @media(max-width:680px){.cards{grid-template-columns:1fr}.savestate{margin-left:0;width:100%}}
+  @media print{
+    .toolbar,.btn,.hint,.checkbtn{display:none!important}
+    body{background:#fff;font-size:12pt}
+    section{box-shadow:none;break-inside:avoid;border-color:#bbb}
+    .notebox{display:block!important}.glossTip{display:none!important}
+    details{border:none}details>summary{display:none}details .body{padding:0}
+    .layout{display:block}
+    .col-notes{position:static;break-before:page}
+    .col-notes .npanel{max-height:none;box-shadow:none;break-inside:avoid}
+    .col-notes textarea{min-height:auto;background:#fff}
+  }
+  /* ===== additions, Sept 2026 upgrade ===== */
+  .bookpage{background:#fffdf7;border:1px solid #e3d9c2;border-radius:10px;padding:14px 18px;margin:14px 0;font-family:Georgia,"Times New Roman",serif}
+  .bookpage .bpdate{font-size:12px;color:var(--muted);text-align:right;font-family:"Segoe UI",system-ui,sans-serif}
+  .bookpage .bptitle{font-size:17px;font-weight:700;text-decoration:underline;margin:0 0 8px}
+  .bookpage table{width:100%;border-collapse:collapse;font-size:14px;margin:8px 0}
+  .bookpage td,.bookpage th{border:1px solid #d9cfb5;padding:6px 9px;vertical-align:top;text-align:left}
+  .bookpage th{background:#f4ecd8;font-size:13px}
+  .bookpage .rule{border:2px solid var(--accent);border-radius:8px;padding:8px 12px;margin:10px 0 4px;font-weight:600;background:#fff;font-size:14.5px}
+  .bookpage .rule b{color:var(--accent);letter-spacing:.05em;font-size:12px;text-transform:uppercase;margin-right:8px;font-family:"Segoe UI",system-ui,sans-serif}
+  .bookpage .bpnote{font-size:12.5px;color:var(--muted);font-family:"Segoe UI",system-ui,sans-serif;margin:6px 0 0}
+  .copyrow{display:flex;align-items:center;gap:10px;font-weight:600;color:var(--accent2);margin:8px 0 12px;font-size:14.5px}
+  .copyrow input{width:18px;height:18px;flex:0 0 auto}
+  .gate{position:relative;border-radius:10px}
+  .gate.locked>*{filter:blur(2.5px);pointer-events:none;user-select:none}
+  .gate.locked{max-height:300px;overflow:hidden}
+  .gate.locked::after{content:attr(data-msg);position:absolute;inset:0;display:flex;align-items:flex-start;justify-content:center;text-align:center;padding:60px 20px 20px;font-weight:700;color:var(--accent);background:rgba(246,243,240,.55);border-radius:10px;z-index:2}
+  .mcq{border:1px solid var(--line);border-radius:10px;padding:11px 14px;margin:10px 0;background:#fbfafc}
+  .mcq .mq{font-weight:600;margin:0 0 8px;font-size:14.5px}
+  .mcq .opts{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+  .mcq .opt{text-align:left;font:inherit;font-size:14px;padding:8px 11px;border:1px solid var(--line);border-radius:8px;background:#fff;cursor:pointer;color:var(--ink)}
+  .mcq .opt:hover{border-color:var(--accent)}
+  .mcq.done .opt{cursor:default}
+  .mcq .opt.right{border-color:var(--ok);background:#e7f0ed;font-weight:600}
+  .mcq .opt.wrong{border-color:var(--no);background:#fdf0ec}
+  .mcq .why{display:none;font-size:13.5px;margin-top:8px;color:var(--muted)}
+  .mcq.done .why{display:block}
+  .mcq.sorter .opts{grid-template-columns:repeat(3,1fr)}
+  .mcq.sorter .mq{font-family:Georgia,"Times New Roman",serif;font-style:italic;font-weight:500;font-size:15.5px}
+  .score{font-size:13px;font-weight:700;color:var(--accent2);margin:6px 0}
+  .orderbox{margin:10px 0}
+  .orderbox .olabel{font-size:12.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);margin:8px 0 4px}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;min-height:46px;padding:8px;border:1px dashed var(--line);border-radius:10px;background:#fff}
+  .chip{font:inherit;font-size:13.5px;line-height:1.3;padding:7px 11px;border:1px solid var(--accent);color:var(--accent);background:#fff;border-radius:20px;cursor:pointer;text-align:left}
+  .chips.chosen .chip{background:var(--soft);cursor:default}
+  .chips.chosen .chip.right{background:#e7f0ed;border-color:var(--ok);color:var(--ok)}
+  .chips.chosen .chip.wrong{background:#fdf0ec;border-color:var(--no);color:var(--no)}
+  .chip .pos{font-weight:700;margin-right:6px}
+  .src{font-size:12.5px;color:var(--muted);margin:-4px 0 8px;font-style:italic}
+  .exampanel{border:1px solid var(--gold);background:#fffaf0;border-radius:10px;padding:12px 16px;margin:12px 0;font-size:14px}
+  .exampanel h4{margin:0 0 6px;color:var(--gold);font-size:14px}
+  .lat{font-family:Georgia,"Times New Roman",serif;font-style:italic}
+  @media(max-width:680px){.mcq .opts,.mcq.sorter .opts{grid-template-columns:1fr}}
+  @media print{.gate.locked>*{filter:none}.gate.locked::after{display:none}.mcq .why{display:block}}
+
+  /* Four Voices additions */
+  .bookpage table.grid4 td,.bookpage table.grid4 th{font-size:12.5px;vertical-align:top;line-height:1.4}
+  .bookpage table.grid4 th:first-child{text-align:left}
+  .bookpage table.grid4.blank td{height:64px}
+  .pair{margin:14px 0 18px;border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:var(--card)}
+  .pair h3{margin:0 0 10px}
+  .pair3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+  .pair3>div{border-radius:10px;padding:10px 12px;font-size:13.5px}
+  .pair3 h5{margin:0 0 6px;font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+  .pair3 ul{margin:0;padding-left:18px}
+  .pair3 li{margin:0 0 6px}
+  .pair3 .agree{background:var(--softg);border:1px solid #c9ddd6}
+  .pair3 .agree h5{color:var(--accent2)}
+  .pair3 .disagree{background:#f7ebe8;border:1px solid #e3c9c2}
+  .pair3 .disagree h5{color:var(--no)}
+  .pair3 .depends{background:#f6f1e3;border:1px solid #e3d8b8}
+  .pair3 .depends h5{color:var(--gold)}
+  @media(max-width:980px){.pair3{grid-template-columns:1fr}}
+  @media print{.pair{break-inside:avoid}.pair3{grid-template-columns:1fr 1fr 1fr}.bookpage table.grid4{font-size:10.5px}}
+</style>
+</head>
+<body>
+<header class="masthead">
+  <div class="inner">
+    <p class="eyebrow">OCR A Level Classical Civilisation &nbsp;|&nbsp; Love and Relationships (H408/32)</p>
+    <h1>The Four Voices</h1>
+    <p class="unitline">Plato, Sappho, Ovid and Seneca on one page &nbsp;&middot;&nbsp; What each one says about love, where they agree and disagree, and how to write the comparison the paper asks for &nbsp;&middot;&nbsp; Year 13 synthesis workbook</p>
+  </div>
+</header>
+
+<div class="toolbar">
+  <div class="inner">
+    <input type="hidden" id="student">
+    <button class="btn" id="saveBtn" title="Download your answers as a file to hand in">Save answers</button>
+    <button class="btn ghost" id="backupBtn" title="Download a file to continue on another computer">Backup</button>
+    <button class="btn ghost" id="restoreBtn" title="Load a backup file to resume">Restore</button>
+    <input type="file" id="restoreInput" accept=".json,application/json" style="display:none">
+    <button class="btn ghost" id="printBtn">Print / PDF</button>
+    <button class="btn ghost" id="fontBtn" title="Switch to an easier reading layout">Easy read</button>
+    <button class="btn warn" id="clearBtn">Clear</button>
+    <span class="savestate" id="saveState">Autosave is on. Your work is kept in this browser.</span>
+  </div>
+</div>
+
+<div class="layout">
+ <div class="col-left">
+
+  <!-- OBJECTIVES -->
+  <section>
+    <div class="sechead"><h2>What this workbook is for</h2></div>
+    <p class="obj">You have studied three of the unit's four voices: Plato's ideas about love and desire, Sappho's fragments, and Ovid's <i>Ars Amatoria</i> 3 as far as Part VII. Seneca is still to come. The problem most of you have named is that the material feels like three separate subjects. The paper never asks about one writer for more than ten marks. The 20-mark and 30-mark questions always set two or more of the four voices against each other, and the mark is for the comparison. This workbook puts the four side by side under the same seven questions, shows you where they agree and where they disagree, and then shows you how to write the comparison so that the examiner can award the marks.</p>
+    <p>By the end you will be able to:</p>
+    <div class="pillrow">
+      <span class="pill">State what Plato, Sappho, Ovid and Seneca each say on the seven questions the paper keeps asking</span>
+      <span class="pill">Revise from one four-column grid instead of three sets of notes</span>
+      <span class="pill">Say for any pair of writers where they agree, where they disagree, and where it depends on the passage</span>
+      <span class="pill">Write a comparative paragraph with a hinge sentence, a judgement, and a scholar doing work</span>
+      <span class="pill">Recognise the real past questions and know which cells of the grid each one is testing</span>
+    </div>
+    <div class="exampanel">
+      <h4>What the examiners want from this material</h4>
+      <p>Three things. First, knowledge of all four voices that is specific: a quotation in the OCR wording with its reference for Sappho and Ovid, and a precise paraphrase with the dialogue or work named for Plato and Seneca. Second, comparison that goes beyond "Plato says X, whereas Ovid says Y": the June 2024 mark scheme rewards answers that explain <b>why</b> the writers differ (genre, purpose, audience, philosophy) and that judge which view is more convincing or more realistic. Third, scholars in the 30-mark essay: the June 2024 mark scheme fixes the rule that an answer with no secondary sources gets the lowest mark in its level and that two or more named scholars earn the second mark up. The grid, the pair pages and the model paragraphs in this workbook are built to give you those three things in the order the paper tests them.</p>
+    </div>
+    <p class="small">How the page works: each part of the workbook has a <b>bookpage</b> of notes to copy into your exercise book. These are the notes you will revise from, so copy them in full. Tick <i>I have copied these notes</i> to unlock the self-marking check underneath it. Everything you type saves automatically and follows you to any device you sign in on. Press <b>Print / PDF</b> at the end and the whole page, notes and your answers, prints as a revision document.</p>
+  </section>
+
+  <!-- STARTER -->
+  <section>
+    <div class="sechead"><h2>Starter: what you think you know</h2><span class="mins">5 min</span></div>
+    <p class="obj">Before any notes, write down your current picture. Nobody will mark this; it is the baseline you will come back to in the exit ticket.</p>
+    <div class="qbox">
+      <p class="q">1. In one sentence each, what do Plato, Sappho and Ovid think love is? Use one reference for each if you can.</p>
+      <textarea data-save="starter1" placeholder="For Plato, love is... (Symposium...). For Sappho, love is... (Fragment...). For Ovid, love is... (Ars 3....)"></textarea>
+    </div>
+    <div class="qbox">
+      <p class="q">2. What do you already know about Seneca? Write anything: who he was, what Stoicism is, what he is likely to say about desire.</p>
+      <textarea data-save="starter2" placeholder="Seneca was... Stoicism holds that... So on desire he probably..."></textarea>
+    </div>
+    <details>
+      <summary>Check your recall</summary>
+      <div class="body small">
+        <p><b>The three you have studied.</b> Plato, through Socrates and Diotima, defines love as desire for something one lacks and finally for the good to be one's own for ever (<i>Symposium</i> 200a to 206a). Sappho does not define it; she reports what it does: "Love which loosens the limbs Once again shakes me! Bitter-sweet, invincible creature that he is" (Fragment 130). Ovid's teacher treats love as a technique: "love lasts long through art" (<i>Ars</i> 3.42) and his lessons are in "the ways of being loved" (3.28).</p>
+        <p><b>Seneca.</b> A Roman Stoic philosopher, tutor and adviser to Nero, forced to kill himself in AD 65. Stoicism holds that virtue is the only good and that the passions, including desire (<i>cupiditas</i>), are mistaken judgements the mind assents to. So he will not say "desire is bad because it is strong"; he will say desire is a false judgement that something external is worth wanting, and that it can be refused at the moment it starts. He rejects passion and keeps a form of love, friendship (<i>amicitia</i>), inside the wise person's life.</p>
+      </div>
+    </details>
+  </section>
+
+  <!-- SECTION 1: THE PAPER -->
+  <section>
+    <div class="sechead"><h2>1. The paper in one page</h2><span class="mins">8 min</span></div>
+    <p class="obj">The shape of the paper explains the shape of this workbook. Read the four cards, then copy the bookpage.</p>
+    <div class="cards">
+      <div class="pcard"><h4>Section A, 45 marks</h4><p>A printed Source A (Sappho fragments or a passage of <i>Ars</i> 3), one or two short factual questions, a <b>10-mark</b> question on the source (5 AO1, 5 AO2), then a block of short questions on Plato or Seneca, a <b>10-mark</b> question explaining one of their ideas, and a <b>20-mark</b> comparison (10 AO1, 10 AO2) of two voices. No scholars required in Section A.</p></div>
+      <div class="pcard"><h4>Section B, 30 marks</h4><p>One essay from a choice of two, 10 AO1 and 20 AO2. The rubric says to use classical sources, scholars, and to "consider possible interpretations of sources by different audiences". The question names the voices it wants, or says "at least two of" or "any three from" the four.</p></div>
+      <div class="pcard"><h4>The pairings that have been set</h4><p>Ovid with Seneca (2022, 2024). Sappho with Plato (2022, 2023, 2025). Plato with Seneca (2025). Sappho with Ovid (2020, 2025). Sappho with "at least two of" the rest (2024). "Any three" (2024). All four (2022 marriage). Five of the six pairs have been set directly; Plato with Ovid has appeared only inside the "any three" and all-four questions.</p></div>
+      <div class="pcard"><h4>What AO2 means here</h4><p>There is no AO3. Context (Athens, Augustan Rome, Nero's court, Lesbos) and scholarship both sit inside AO2, which is analysis, interpretation and evaluation. "Evaluation" means a judgement: more convincing, more realistic, more honest, and a reason.</p></div>
+    </div>
+
+    <div class="bookpage">
+      <div class="bpdate">Date: ____________</div>
+      <div class="bptitle">Notes 1: The paper, and the questions it has actually asked</div>
+      <table>
+        <tr><th style="width:22%">Year</th><th>Questions that set voices against each other</th></tr>
+        <tr><td>November 2020</td><td>30 marks: "Sappho shows no understanding of men in her poetry, whereas Ovid shows no understanding of women."</td></tr>
+        <tr><td>June 2022</td><td>Source A: <i>Ars</i> 3.279 to 296 (how serious is Ovid being). 20 marks: whether Seneca or Ovid offered more useful guidance to Roman women. 30 marks: who represents marriage most positively, Plato, Seneca, Ovid or Sappho. 30 marks: "Sappho's poetry warns her audience to fear love, whereas Plato encourages his to seek love out."</td></tr>
+        <tr><td>June 2023</td><td>20 marks: whether Sappho or Plato gives the clearer definition of love. 30 marks: "Seneca fears desire, but Sappho and Ovid celebrate it." 30 marks: love as a positive force for self-improvement.</td></tr>
+        <tr><td>June 2024</td><td>Source A: <i>Ars</i> 3.433 to 454 (how Ovid warns of the dangers of love). 10 marks: Seneca's advice on handling desire wisely. 20 marks: whether both Ovid and Seneca portray desire as threatening. 30 marks: "Only Sappho thinks that emotions are necessary for a successful relationship" (Sappho plus two of the others). 30 marks: how realistically love is portrayed by any three.</td></tr>
+        <tr><td>June 2025</td><td>Source A: Sappho 49, 96, 131 (her relationship with Atthis). 10 marks: how Plato presents desire for the body and desire for the mind differently. 20 marks: whether Sappho or Plato gives the more positive view of same sex relationships. 30 marks: whether Plato's and Seneca's ideals of love were different. 30 marks: "The poems of Sappho give a much better education about love and relationships for women than those of Ovid."</td></tr>
+      </table>
+      <div class="rule"><b>Rule</b>Every 20-mark and 30-mark question is a comparison. Knowledge of one voice earns at most ten marks on this paper. The comparison and the judgement earn the rest.</div>
+      <p class="bpnote">The seven questions the paper keeps circling: what love is; love and desire; what desire does to the body; whether desire should be controlled; marriage; men and women; good and bad conduct. Every real question above is one or two of these seven applied to two or more voices. The rest of this workbook is organised by those seven.</p>
+    </div>
+    <label class="copyrow"><input type="checkbox" data-save="copied_paper"> I have copied these notes into my book</label>
+
+    <div class="gate" data-gate="copied_paper" data-msg="Tick 'I have copied these notes' to unlock the check.">
+      <h3>Check 1: the four voices in time</h3>
+      <p class="small">Context is AO2 on this paper, and the first thing an examiner notices is a candidate who has the centuries wrong. Click the eight events in order, earliest first. One mark per correct position.</p>
+      <div class="orderbox" id="ord_trans"></div>
+      <input type="hidden" data-save="ord_trans"><input type="hidden" data-save="ord_trans_score">
+    </div>
+
+    <div class="qbox">
+      <p class="q">Quick check: look at the June 2024 30-mark question on emotions. Which of the seven questions is it really asking, and which two voices would you choose to set beside Sappho? One or two sentences.</p>
+      <textarea data-save="paper1" placeholder="It is really asking whether..., so I would choose... and... because..."></textarea>
+    </div>
+  </section>
+
+  <!-- SECTION 2: PLATO -->
+  <section>
+    <div class="sechead"><h2>2. Plato, under the seven questions</h2><span class="mins">12 min</span></div>
+    <p class="obj">Plato is a "classical thought" topic: there is no set text and no set translation, so the marks come from knowing who says what, in which dialogue, and what the argument is. Tap the gold terms for a definition. The seven headings below are the same seven you will meet for each of the other three voices, in the same order, so that the pages line up when you read across.</p>
+
+    <h3>What love is</h3>
+    <p>Socrates, questioning Agathon, establishes that love is always love <i>of</i> something, and of something one lacks: the tall man does not desire to be tall (<i>Symposium</i> 200a to 201c). Diotima then builds the doctrine: <span class="gloss" data-term="eros">Eros</span> is a spirit between god and mortal, child of Poverty and Resource, always poor and always scheming (203b to e), and love is "of the good being one's own for ever" (206a). The answer to "what is love" is therefore <b>lack</b>, and the thing finally lacked and wanted is Beauty itself (211). Keep the speaker straight: "Plato, through Diotima, argues that..." for the ascent; "Pausanias, one of Plato's speakers, argues that..." for the two Aphrodites; never "Plato says" for a view given to Agathon or Aristophanes, whom Socrates corrects.</p>
+
+    <h3>Love and desire: the same or different?</h3>
+    <p>For Plato eros <i>is</i> desire; the question is what it is desire for. Pausanias splits it in two: the Common Aphrodite's love is of women as much as boys and of the body rather than the soul, and the Heavenly Aphrodite's love is of the soul and lasts (180c to 185c). Diotima does not split it; she ranks its objects on a ladder, from one beautiful body to all bodies to souls, laws and knowledge, and finally to Beauty "pure and unmixed with human flesh" (210a to 212a). So the fault lies in wrongly directed desire, never in desire as such.</p>
+
+    <h3>What desire does to the body</h3>
+    <p>The <i>Phaedrus</i> gives the symptoms: the lover who sees a beautiful face shudders, sweats and feels heat; the wings of the soul begin to grow; in the beloved's absence the lover aches and cannot sleep, and in his presence the pain stops (251a to 252a). The point to make is that these are the same symptoms as Sappho 31, and Plato uses them as evidence about the <b>soul</b>: the body is reacting to the soul's recollection of true Beauty (249d to 250e). Alcibiades gives the same experience from the inside, the bite of Socrates' words in his heart and his own condition as slavery (217e to 219e).</p>
+
+    <h3>Should desire be controlled, and how?</h3>
+    <p>Yes, by reason, and Plato gives the picture everyone remembers: the soul as a charioteer with two horses, one obedient and one unruly; at the sight of the beloved the bad horse drags toward sexual pleasure and the charioteer pulls back on the reins until the horse is humbled (<i>Phaedrus</i> 253c to 254e). <i>Republic</i> 3 (402d to 403c) says the right kind of love has no sexual pleasure in it, and a lover may kiss and touch his beloved "as a father would a son" and no further. But the same Socrates calls the lover's madness the best of the divine madnesses (244a to 245c), so control is not suppression. The desire is kept and redirected upward.</p>
+
+    <h3>Marriage</h3>
+    <p>Marriage is the lowest answer to the desire for immortality. Diotima says the union of man and woman is a divine thing because it gives mortals a share of immortality through children (206c), but those "pregnant in soul" produce wisdom and poems, and anyone would rather have the children of Homer and Hesiod than human ones (208e to 209e). In the ideal city of <i>Republic</i> 5 there are no private marriages at all: the guardians' wives and children are held in common and mating is arranged at festivals by rigged lots (457c to 461e). Say that this is the ideal city, not advice to Athenians.</p>
+
+    <h3>Men and women</h3>
+    <p>The <i>Symposium</i> is a men's dinner. Pausanias ranks love of males above love of women (181c); Aristophanes says men descended from the male-male being are the best of their generation, and mentions women who love women in one sentence (191e). Women appear as examples (in Phaedrus's speech Alcestis dies for her husband, 179b) and as the absent authority Diotima, whose doctrine Socrates reports. Halperin asks why Diotima is a woman and answers that Plato gives the female power of childbirth to male philosophy as "pregnancy in soul". Dover supplies the custom behind Pausanias: the older partner pursued, the younger was not to show desire, and yielded only to gain virtue.</p>
+
+    <h3>Good and bad conduct</h3>
+    <p>Good conduct is love that leads to virtue: the youth may yield to a lover for the sake of becoming good himself, not for money or quickly (184c to e), and, in Phaedrus's speech, an army of lovers would be invincible because love makes people ashamed of disgrace (178e to 179a). Bad conduct is love of the body alone, the common lover who "takes wing and flies away" when the bloom fades (183d to e), and the lawless desires that wake in sleep when reason is off guard (<i>Republic</i> 9, 571c to 572b). Lysias' speech in the <i>Phaedrus</i>, that the non-lover is a better partner because the lover is mad and jealous, is stated (230e to 234c), repeated by Socrates (237a to 241d) and withdrawn in his second speech (243a onwards).</p>
+
+    <div class="symptom">
+      <span class="s">love is lack (200a to 201c)</span><span class="s">Eros child of Poverty and Resource (203b to e)</span><span class="s">two Aphrodites (180c to 185c)</span><span class="s">the ladder (210a to 212a)</span><span class="s">shudder, sweat, heat (Phdr. 251a)</span><span class="s">the charioteer (253c to 254e)</span><span class="s">children of Homer (209c to d)</span><span class="s">no private marriages (Rep. 5)</span><span class="s">Vlastos: the person as placeholder</span>
+    </div>
+
+    <div class="bookpage">
+      <div class="bpdate">Date: ____________</div>
+      <div class="bptitle">Notes 2: Plato on the seven questions</div>
+      <table>
+        <tr><th style="width:24%">Question</th><th>Plato's position</th><th style="width:26%">Reference</th></tr>
+        <tr><td>What love is</td><td>Desire for what one lacks; finally, for the good to be one's own for ever, and for Beauty itself. Eros is a spirit between god and mortal, child of Poverty and Resource.</td><td><i>Symp.</i> 200a to 201c; 203b to e; 206a; 211</td></tr>
+        <tr><td>Love and desire</td><td>Eros is desire; what matters is its object. Common love is of the body and does not last; Heavenly love is of the soul (Pausanias). Diotima ranks the objects on a ladder from one body to Beauty itself.</td><td><i>Symp.</i> 180c to 185c; 210a to 212a</td></tr>
+        <tr><td>Desire and the body</td><td>Shuddering, sweat, heat, sleepless aching in absence; the body reacts to the soul's recollection of Beauty. Alcibiades: the bite in the heart, slavery.</td><td><i>Phdr.</i> 249d to 252a; <i>Symp.</i> 217e to 219e</td></tr>
+        <tr><td>Control of desire</td><td>Yes, by reason: the charioteer reins the unruly horse. No sexual pleasure in right love. But love's madness is divine; desire is redirected upward, not removed.</td><td><i>Phdr.</i> 253c to 254e; 244a to 245c; <i>Rep.</i> 3.402d to 403c</td></tr>
+        <tr><td>Marriage</td><td>The lowest route to immortality; children of the mind (poems, laws) are better. In the ideal city, no private marriages.</td><td><i>Symp.</i> 206c; 208e to 209e; <i>Rep.</i> 5.457c to 461e</td></tr>
+        <tr><td>Men and women</td><td>Love between males ranked highest (Pausanias, Aristophanes); women as examples (Alcestis, in Phaedrus's speech) and as the reported voice of Diotima. Halperin: pregnancy in soul takes over childbirth. Dover: the conventions of pederasty.</td><td><i>Symp.</i> 179b; 181c; 191e; 184c to e</td></tr>
+        <tr><td>Good and bad conduct</td><td>Good: yielding for the sake of virtue (Pausanias); love that makes people ashamed of disgrace (Phaedrus's speech). Bad: love of the body alone; the lover who flies away; lawless desires in sleep.</td><td><i>Symp.</i> 178e to 179a; 183d to e; 184c to e; <i>Rep.</i> 9.571c to 572b</td></tr>
+      </table>
+      <div class="rule"><b>Rule</b>Plato intends to <b>define</b> love and to <b>redirect</b> desire. Every comparison with Plato turns on one of those two verbs.</div>
+    </div>
+    <label class="copyrow"><input type="checkbox" data-save="copied_plato"> I have copied these notes into my book</label>
+
+    <div class="gate" data-gate="copied_plato" data-msg="Tick 'I have copied these notes' to unlock the check.">
+      <h3>Check 2: Plato</h3>
+      <div id="mcA"></div>
+      <input type="hidden" data-save="mcA_1"><input type="hidden" data-save="mcA_2"><input type="hidden" data-save="mcA_3"><input type="hidden" data-save="mcA_4"><input type="hidden" data-save="mcA_5"><input type="hidden" data-save="mcA_6"><input type="hidden" data-save="score_A">
+    </div>
+
+    <div class="qbox">
+      <p class="q">Section 2 practice: the June 2025 10-mark question was "Explain how Plato presents desire for the body and desire for the mind differently." Write the opening three sentences, naming the speaker each time.</p>
+      <textarea data-save="q_plato" placeholder="Pausanias, one of Plato's speakers, distinguishes... Diotima, reported by Socrates, then..."></textarea>
+      <div class="wc" data-wc="q_plato">0 words</div>
+    </div>
+  </section>
+
+  <!-- SECTION 3: SAPPHO -->
+  <section>
+    <div class="sechead"><h2>3. Sappho, under the seven questions</h2><span class="mins">12 min</span></div>
+    <p class="obj">Sappho is a prescribed source, so the marks come from short quotations in the OCR wording with the Loeb number. The fragments below are the ones you studied in Lessons 1 to 7. Notice as you read that Sappho does not answer the seven questions in the way the philosophers do: she describes, and the description is the answer.</p>
+
+    <h3>What love is</h3>
+    <p>The nearest she comes to a definition is Fragment 130: "Love which loosens the limbs Once again shakes me! Bitter-sweet, invincible creature that he is." Eros is a living agent, he returns ("once again"), he is sweet then bitter (Carson: <span class="gloss" data-term="glukupikron">glukupikron</span>, sweet first), and he cannot be fought. Fragment 16 gives a definition by preference: "The most beautiful sight in the whole world... I think it is the one you love." Fragment 47 gives the force: "Love shook my soul, Like a wind buffeting oak trees On a mountain."</p>
+
+    <h3>Love and desire: the same or different?</h3>
+    <p>Sappho does not separate them. The longing <i>is</i> the love: "She remembers gentle Atthis, And the longing consumes her flighty soul!" (96). Fragment 94 puts "on a soft bed... You satisfied your desire" in the same list as groves and dances, and Fragment 112 says to the groom "Honey-sweet, love is poured Over your beautiful face". The one fragment that ranks something above the physical is 50: "A handsome man is only good to look at, A good man will become handsome", the closest Sappho comes to Plato's move from body to soul.</p>
+
+    <h3>What desire does to the body</h3>
+    <p>Fragment 31 is the catalogue: "My tongue breaks", "A delicate fire runs beneath my skin", "I see nothing with my eyes", "a buzzing in my ears", "sweat pours over me", "a tremor seizes me all over", "I am greener than grass", "On the point of death". The beloved is present; the man beside her is the foil. Three readings: jealousy of the man (Page), the man as the third point of a triangle that shows how far the speaker is from the woman (Carson), the man as a set-up to be dismissed (Winkler). "Greener than grass" is pallor, not envy.</p>
+
+    <h3>Should desire be controlled, and how?</h3>
+    <p>Control is not the question Sappho asks. Desire is petitioned, not governed: Fragment 1 asks Aphrodite not to "overpower my heart with anguish" and to "Be my ally", and the goddess's reply, "if she does not love you now, she will love you soon even if she does not want to", treats desire as something the god does to people. Fragment 130's "once again" says it keeps coming back. The speaker never reins anything in; she asks for help, remembers, curses, or waits. Fragment 137 is the one check: "I want to say something, But a sense of shame holds me back", and the reply says shame only stops shameful speech.</p>
+
+    <h3>Marriage</h3>
+    <p>The wedding songs give both sides. Celebration: "Raise the roof, Hymenaeus!... The bridegroom is coming, Like Ares" (111); "Lucky bridegroom... You have the girl of your dreams" and "Aphrodite has honoured you Above all others" (112). Cost: Hesperus brings "The child, to its mother" on the evening the daughter leaves (104a); the hyacinth "Trodden by the feet of the shepherds" (105c); "Virginity, virginity, where have you gone? You left me behind" (114). Seaford and Rehm read the Greek wedding as structured like a death for the bride; Karanika reads the mirrored lines as a girls' game that gives the loss a communal voice. Fragment 121 refuses an unequal match: "I never want to be the older one In a relationship."</p>
+
+    <h3>Men and women</h3>
+    <p>A woman's voice desiring women: 31, 94, 96, 1. duBois reads Fragment 16's Helen, who "Abandoned her husband, The most excellent of all men", as a woman who acts and chooses, set against the martial values of epic. The poems live in a community of women: the grove of Fragment 2, the shared "good times" of 94, "Now, for my companions, I will sing these songs beautifully" (160). Men appear as the groom, the doorkeeper with "size twenty-seven feet" (110), and "that man" in 31. Winkler calls this a double consciousness: Sappho knows the public male culture and writes from inside a private female one.</p>
+
+    <h3>Good and bad conduct</h3>
+    <p>Good conduct is tenderness kept across absence: "Go, farewell, and remember me" (94); the moon among the stars (96). Bad conduct is measured by refinement and loyalty, not by law: the woman with "no share Of the roses from the Pierian muses" whom "no one will ever remember" (55); the "farm girl, in her farming clothes" who "Charms your mind" (57); the rejection "Atthis, the thought of me Now repulses you and you run off to Andromeda" (131); the cold "I used to love you, Atthis" (49, a contested join). Sappho moralises once, in 137.</p>
+
+    <div class="symptom">
+      <span class="s">130: loosens the limbs, bitter-sweet, invincible</span><span class="s">16: the one you love; Helen acts</span><span class="s">31: the catalogue; three readings</span><span class="s">1: Be my ally</span><span class="s">94 and 96: memory and longing</span><span class="s">111, 112 against 104a, 105c, 114</span><span class="s">50: the good man becomes handsome</span><span class="s">55 and 57: the bitter voice</span>
+    </div>
+
+    <div class="bookpage">
+      <div class="bpdate">Date: ____________</div>
+      <div class="bptitle">Notes 3: Sappho on the seven questions</div>
+      <table>
+        <tr><th style="width:24%">Question</th><th>Sappho's position</th><th style="width:26%">Fragments</th></tr>
+        <tr><td>What love is</td><td>A living force that acts on her: "loosens the limbs", "Bitter-sweet, invincible creature". Defined by preference: "the one you love". A wind on oaks.</td><td>130; 16; 47</td></tr>
+        <tr><td>Love and desire</td><td>Not separated: "the longing consumes her flighty soul". Desire satisfied sits with groves and dances. Only 50 ranks goodness above looks.</td><td>96; 94; 112; 50</td></tr>
+        <tr><td>Desire and the body</td><td>The catalogue: tongue breaks, fire under the skin, blindness, buzzing, sweat, tremor, "greener than grass", "On the point of death". Page, Carson, Winkler on "that man".</td><td>31; 47</td></tr>
+        <tr><td>Control of desire</td><td>Not controlled: petitioned. Aphrodite as "ally"; desire returns "Once again". The one check is shame, which stops only shameful speech.</td><td>1; 130; 137</td></tr>
+        <tr><td>Marriage</td><td>Celebrated ("Like Ares", "the girl of your dreams", Aphrodite's honour) and costed (the child to its mother, the trodden hyacinth, "Virginity, virginity"). The unequal match refused.</td><td>111; 112; 104a; 105c; 114; 121</td></tr>
+        <tr><td>Men and women</td><td>A woman desiring women, in a community of women; Helen as a woman who acts (duBois); men as groom, doorkeeper, foil. Winkler's double consciousness.</td><td>31; 94; 96; 16; 2; 160; 110</td></tr>
+        <tr><td>Good and bad conduct</td><td>Good: tenderness and memory. Bad: the unpoetic, the unrefined, the one who runs off. Sappho's measure is refinement and loyalty, not law.</td><td>94; 96; 55; 57; 131; 49</td></tr>
+      </table>
+      <div class="rule"><b>Rule</b>Sappho <b>describes</b> what the philosophers <b>define</b>. In a comparison that is the hinge: she gives the experience, they give the account of it.</div>
+    </div>
+    <label class="copyrow"><input type="checkbox" data-save="copied_sappho"> I have copied these notes into my book</label>
+
+    <div class="gate" data-gate="copied_sappho" data-msg="Tick 'I have copied these notes' to unlock the check.">
+      <h3>Check 3: Sappho</h3>
+      <div id="mcB"></div>
+      <input type="hidden" data-save="mcB_1"><input type="hidden" data-save="mcB_2"><input type="hidden" data-save="mcB_3"><input type="hidden" data-save="mcB_4"><input type="hidden" data-save="mcB_5"><input type="hidden" data-save="mcB_6"><input type="hidden" data-save="score_B">
+    </div>
+
+    <div class="qbox">
+      <p class="q">Section 3 practice: Plato says love is desire for what one lacks. Using Fragment 16 or 96, write two sentences showing that Sappho's poetry fits that claim, and a third sentence saying where it does not (think of 94 or 112).</p>
+      <textarea data-save="q_sappho" placeholder="Sappho's poetry fits the claim because in Fragment 16... However, in Fragment 94..."></textarea>
+      <div class="wc" data-wc="q_sappho">0 words</div>
+    </div>
+  </section>
+
+  <!-- SECTION 4: OVID -->
+  <section>
+    <div class="sechead"><h2>4. Ovid, under the seven questions</h2><span class="mins">14 min</span></div>
+    <p class="obj">You have read <i>Ars Amatoria</i> 3 as far as Part VII (lines 1 to 348): the proem, the lessons on appearance, and the accomplishments. Everything below the first rule in the bookpage is drawn from those lines, in Kline's wording with the booklet's line numbers. A second, shaded table lists what Parts VIII to XVIII will add to each question, so that you can see the shape of the whole book now and fill the cells as you reach them. Two words before you start: the speaker is the <span class="gloss" data-term="praeceptor">praeceptor amoris</span>, the teacher of love, a persona whom Ovid makes vain and inconsistent, so you write "the teacher says", not "Ovid believes"; and his pupil is not a wife (he says so at 483 and 613 to 616), which matters for the marriage question.</p>
+
+    <h3>What love is</h3>
+    <p>A technique. The four heroines destroyed by men were destroyed by one thing: "Not knowing how to love: your art was lacking: love lasts long through art" (3.41 to 42). <span class="gloss" data-term="ars">Ars</span> is the title word, and the lessons are in "the ways of being loved" (3.28), a passive: not how to love but how to be the object of a man's desire. Love is also a game: "Only playful passions will be learnt from me" (3.27), and the book will end with "The game is done" (3.809). Where Plato defines and Sappho describes, the teacher instructs.</p>
+
+    <h3>Love and desire: the same or different?</h3>
+    <p>Desire is the subject and "love" is the name for keeping it going. The proem's argument is to the body's clock: "Have fun while it's allowed, while your years are in their prime: the years go by like flowing waters" (3.61 to 62), and "pluck the flower, which, if not plucked, will of itself, shamefully, fall" (3.79 to 80). The teacher argues consent away: "Even if you're deceived, what do you lose? It's all intact: though a thousand use it, nothing's destroyed that way" (3.89 to 90). Gibson notes that the "nothing is lost" reasoning is a stock seducer's line from Greek comedy, so a reader who recognises it knows what kind of adviser this is.</p>
+
+    <h3>What desire does to the body</h3>
+    <p>In Sappho the body suffers desire; in Ovid the body is the raw material that produces it. The governing word is <span class="gloss" data-term="cultus">cultus</span>: "good wine comes from vines that are looked after" (3.101), "Taking pains brings beauty: beauty neglected dies" (3.105), "Art imitates chance" (3.155), "art delights in its hidden face" (3.210). The woman is the fifth artwork after Myron's statue, the ring, the dress and the Venus: "many things that please when done, are ugly in the doing" (3.218). Then the catalogue of defects, "If you're short sit down, lest, standing, you seem to sit" (3.263), and even the laugh: "Who'd believe it? Girls must even learn to laugh" (3.281). The one moment desire breaks into the teacher's own body is 3.309 to 310: "when I see it, I want to kiss your shoulder, as far as it's shown." Downing calls the method anti-Pygmalion: the woman sculpts herself, under the man's direction, so that the man remains the viewer.</p>
+
+    <h3>Should desire be controlled, and how?</h3>
+    <p>By manners, for effect. "There's measure here as in most things: both the rustic's stride, and the more affected step should be foregone" (3.305 to 306): Gibson's middle way between the matron and the prostitute, not too plain and not too gaudy. Tears are taught ("They're taught to cry, with propriety", 3.291 to 292), the lisp is taught, silence is taught ("Charm's in a defect", 3.295). The control is of the performance. The desire itself is left alone, because the desire is the product. Merriam's reading of the laughter passage is the sharpest statement: the teacher cannot forbid women to laugh at men, so he persuades them that laughing is ugly, and the beauty advice is the management of male anxiety.</p>
+
+    <h3>Marriage</h3>
+    <p>Listed and dismissed. The faithful wives, Penelope, Laodameia, Alcestis and Evadne (3.15 to 22), prove that women can be virtuous, and at line 25 the teacher says virtue is not his subject. Childbirth is priced as damage: "the time of youth is shortened by childbirth: the field's exhausted by continual harvest" (3.81 to 82), against the Augustan law that rewarded a mother of three. Andromache in "healthy clothes" and Ajax's wife in "seven hides of an ox" (3.109 to 112) are devoted wives turned into fashion failures. The teacher's assurances that he stays within "modesty, principles and your rules" (3.58) and does not "say sell it" (3.97) keep the married woman just outside the poem.</p>
+
+    <h3>Men and women</h3>
+    <p>The teacher says he is making the fight fair: "Go equal to the fight" (3.3), "It's not fair for armed men to battle with naked girls" (3.5), and "Men often cheat: it's seldom tender girls" (3.31). Then the lesson is in being the prize. He addresses "men" at line 6 before he has said a word to the women, and speaks as a man throughout: "wealth which you court us with, often makes us flee" (3.132), "We're captivated by elegance" (3.133), "our hair, snatched at by time" (3.161). Women are Sirens who "could restrain a ship's course as they wished" (3.311 to 312), and a woman's voice "a better procuress than your looks" (3.316). James's thesis is that the real audience of a book for women is the men being shown the tricks, and that the teacher "lets the women see too much" by telling them to read Books 1 and 2 (3.341 to 342).</p>
+
+    <h3>Good and bad conduct</h3>
+    <p>Good conduct is successful conduct. The goddesses who took mortal lovers are the examples to follow (3.87 to 88); refusing is the one error: "So why should any woman say: 'Not now'?" (3.95). The reading list ends with "let Sappho be yours (well what's more wanton?)" (3.331), which is the teacher's one line on Sappho and reads her as an erotic entertainer. Volk's point is that the full machinery of a teaching poem, the commission from Venus, the catalogues, the sailing metaphors, is real didactic form spent on hairstyles; the comedy is in the gap between the form and its use.</p>
+
+    <div class="symptom">
+      <span class="s">42: love lasts long through art</span><span class="s">28: the ways of being loved</span><span class="s">89 to 90: nothing's destroyed that way</span><span class="s">155: Art imitates chance</span><span class="s">210: art delights in its hidden face</span><span class="s">281: Girls must even learn to laugh</span><span class="s">305: measure here as in most things</span><span class="s">82: the field's exhausted</span><span class="s">316: a better procuress than your looks</span>
+    </div>
+
+    <div class="bookpage">
+      <div class="bpdate">Date: ____________</div>
+      <div class="bptitle">Notes 4: Ovid on the seven questions (Parts I to VII, lines 1 to 348)</div>
+      <table>
+        <tr><th style="width:24%">Question</th><th>The teacher's position</th><th style="width:22%">Lines</th></tr>
+        <tr><td>What love is</td><td>A technique: "love lasts long through art"; lessons in "the ways of being loved" (a passive); a game, "playful passions".</td><td>3.41 to 42; 28; 27</td></tr>
+        <tr><td>Love and desire</td><td>Desire is the subject; use it before youth goes: "the years go by like flowing waters", "pluck the flower". Consent argued away: "nothing's destroyed that way" (Gibson: a stock seducer's line).</td><td>3.59 to 82; 89 to 92</td></tr>
+        <tr><td>Desire and the body</td><td>The body is material to be worked: cultus, "Art imitates chance", "art delights in its hidden face", the catalogue of defects, the taught laugh. The teacher's own desire at the shoulder. Downing: anti-Pygmalion.</td><td>3.101 to 105; 155; 210; 263 to 278; 281; 309 to 310</td></tr>
+        <tr><td>Control of desire</td><td>Of the performance, by manners: "measure here as in most things"; taught tears, lisp and silence. Gibson's middle way; Merriam on laughter as the management of male anxiety.</td><td>3.291 to 296; 305 to 306</td></tr>
+        <tr><td>Marriage</td><td>Faithful wives listed and dismissed; childbirth "the field's exhausted by continual harvest"; Andromache's "healthy clothes". The matron kept outside by the assurances at 58 and 97.</td><td>3.11 to 25; 81 to 82; 109 to 112; 58; 97</td></tr>
+        <tr><td>Men and women</td><td>Fairness claimed ("Go equal to the fight") and withdrawn; the male "we" and "us"; women as Sirens, a voice as "procuress". James: the real audience is men; "He lets the women see too much".</td><td>3.3 to 6; 31; 132 to 133; 161; 311 to 316; 341 to 342</td></tr>
+        <tr><td>Good and bad conduct</td><td>Good conduct is what works: follow the goddesses, never say "Not now". Sappho read as "wanton". Volk: real didactic machinery, comic use.</td><td>3.87 to 98; 331</td></tr>
+      </table>
+      <div class="rule"><b>Rule</b>Write "the teacher", not "Ovid", and say in every paragraph who the pupil is. The book claims to arm women and teaches them to be the prize; the top-band move is to show from the lines in front of you which it is doing there.</div>
+      <p class="bpnote"><b>What Parts VIII to XVIII will add (not yet taught; fill these cells as you reach them).</b> What love is: "What's easily given nourishes love poorly" (579) and "I don't love unless I'm hurt" (598): desire needs obstacles. Desire and the body: the young lover's violence (567 to 570); "Woman, feel love, melted to your very bones, and let both delight equally" (793 to 794); faking it (797 to 802). Control: temper in games, "in a game the naked heart's exposed" (372); the older lover who "burns with slow fires" (573). Marriage: "Often a lover's found at a husband's funeral" (431 to 432); wives are not loved because "their husbands can come to them when they wish" (585 to 586, Kline's "bitter wives" is a mistranslation of "to be loved"); "let the bride fear her husband: to guard a wife is right" (613 to 614); the death of Procris (687 to 746). Men and women: the gifts-for-sex contract (461 to 462); "Make us believe (it's so easy) that we're loved" (673); "Ovid was my master" on the women's trophies (812). Conduct: "countering fraud with fraud's allowed" (491 to 492); the drunk woman "worthy of sleeping with anyone who'll have her" (765 to 766).</p>
+    </div>
+    <label class="copyrow"><input type="checkbox" data-save="copied_ovid"> I have copied these notes into my book</label>
+
+    <div class="gate" data-gate="copied_ovid" data-msg="Tick 'I have copied these notes' to unlock the check.">
+      <h3>Check 4: Ovid</h3>
+      <div id="mcC"></div>
+      <input type="hidden" data-save="mcC_1"><input type="hidden" data-save="mcC_2"><input type="hidden" data-save="mcC_3"><input type="hidden" data-save="mcC_4"><input type="hidden" data-save="mcC_5"><input type="hidden" data-save="mcC_6"><input type="hidden" data-save="score_C">
+    </div>
+
+    <div class="qbox">
+      <p class="q">Section 4 practice: "Who'd believe it? Girls must even learn to laugh" (3.281) and Sappho's "charming laughter" which "strikes terror into the heart" (31). Write three sentences that put the two together and end with a judgement about which writer takes a woman's laugh more seriously.</p>
+      <textarea data-save="q_ovid" placeholder="In Fragment 31 the beloved's laughter..., whereas the teacher at 3.281... The difference is that..."></textarea>
+      <div class="wc" data-wc="q_ovid">0 words</div>
+    </div>
+  </section>
+
+  <!-- SECTION 5: SENECA (SKETCH) -->
+  <section>
+    <div class="sechead"><h2>5. Seneca, a first sketch</h2><span class="mins">12 min</span><span class="tagx">New</span></div>
+    <p class="obj">You have not studied Seneca yet, and this page is not the full treatment. It gives you enough to put him in the fourth column so that the grid is complete and the comparisons can be practised now. Everything here will be deepened when we teach him properly; the references are the ones you will meet again. Seneca is a "classical thought" topic like Plato: no set text, marks for naming the work and stating the idea precisely.</p>
+    <div class="cards">
+      <div class="pcard"><h4>Who he was</h4><p>Lucius Annaeus Seneca, born in Spain around 4 BC, a Stoic philosopher, playwright and politician. Tutor to the young Nero and then his adviser; exiled by Claudius; forced to kill himself in AD 65 after a conspiracy. His wife Paulina tried to die with him. His works on our topic are the <i>Letters to Lucilius</i>, the dialogues <i>On Anger</i>, <i>On the Happy Life</i> and <i>On Tranquillity</i>, a lost book <i>On Marriage</i> known from Jerome's use of it, and the tragedy <i>Phaedra</i>.</p></div>
+      <div class="pcard"><h4>The Stoic framework</h4><p>Virtue is the only good; everything else, including health, wealth, marriage and children, is an "indifferent", though some are "preferred". A passion is a mistaken judgement that something external is good or bad, plus an impulse to act, and it only becomes a passion when the mind <span class="gloss" data-term="assensio">assents</span> to the impression. The four cardinal passions are <span class="gloss" data-term="cupiditas">cupiditas</span> (desire), pleasure, fear and grief. The goal is <span class="gloss" data-term="apatheia">apatheia</span>, freedom from them, which is not numbness: the wise person keeps rational feelings and keeps friendship.</p></div>
+      <div class="pcard"><h4>Why "anti fun" is only half right</h4><p>Seneca rejects pleasure (<i>voluptas</i>) as a goal: "Pleasure is a low thing, slavish, weak, perishable" (<i>On the Happy Life</i> 7.3). But he does not reject love. The wise man wants a friend and loves him (<i>Letter</i> 9), and the surviving account of his own marriage is affectionate. What he refuses is passion: desire that has taken over the mind.</p></div>
+      <div class="pcard"><h4>How the paper has used him</h4><p>Paired with Ovid in 2022 (guidance to women) and 2024 (desire as threatening); with Plato in 2025 (were their ideals of love different); named in 2023 ("Seneca fears desire"). The 2024 mark scheme's Seneca points: excessive desire as "a festering wound, threatening to health"; the difference between desire as a want and as a need; his marriage to Paulina; love described as a friendship.</p></div>
+    </div>
+
+    <h3>What love is</h3>
+    <p>Love worth having is friendship, <i>amicitia</i>, a rational attachment: the wise man is content with himself and still wants a friend, not to be served by him but to serve him; he will love his friends, and he bears the loss of a friend with an even mind, because he carries everything he needs within himself (<i>Letter</i> 9, in paraphrase; the OCR topic has no set translation). Love pursued as pleasure is a species of cupiditas, a passion, and shares pleasure's low address: "the brothels and the taverns" (<i>On the Happy Life</i> 7.3).</p>
+
+    <h3>Love and desire: the same or different?</h3>
+    <p>Different in kind. Desire is a passion, a false judgement that a future good is worth wanting; love of a friend or a wife is a rational feeling that the wise person keeps. The difference between a want and a need is the 2024 mark scheme's phrase for it. Where Plato ranks desire's objects on a ladder, Seneca separates the passion from the attachment and keeps only the attachment.</p>
+
+    <h3>What desire does to the body</h3>
+    <p>The tragedy <i>Phaedra</i> gives the case study. Phaedra, consumed by desire for her stepson, says: "What can reason do? Madness has conquered and now reigns" (<i>vicit ac regnat furor</i>, 184 to 185); just before it she admits that her mind goes headlong knowing what it does and comes back in vain looking for sound counsel (177 to 184). The Nurse reports the symptoms: she neither eats nor sleeps, her colour has gone, she weeps and cannot keep still (360 to 386), and Phaedra herself later says the fire rages deep in her marrow and runs through her veins (640 to 644). The body's first reactions, the shiver at a sound, the tears at a sad sight, are "first movements" (<i>primi motus</i>) and are not in our power; the passion begins only when the mind assents (<i>On Anger</i> 2.2 to 2.4). So the symptoms of Sappho 31 and <i>Phaedrus</i> 251 are, for Seneca, the body's prelude; the fault is the assent that follows.</p>
+
+    <h3>Should desire be controlled, and how?</h3>
+    <p>Yes, and early. Phaedra's Nurse states the doctrine: "Whoever resists love at the first and drives it out is safe and the victor; whoever nurses the sweet evil by indulging it refuses too late to bear the yoke he has taken on" (<i>Phaedra</i> 132 to 135). Refuse the assent at the first movement; there is no moderate passion: "Our school drives them all out. The Peripatetics moderate them. I cannot see how any moderation of a disease can be healthy" (<i>Letter</i> 116.1). Rehearse loss in advance so that nothing surprises you (<i>praemeditatio</i>, <i>On Tranquillity</i> 11). The contrast with Plato is exact: Plato redirects desire upward through the charioteer's struggle; Seneca refuses it at the door.</p>
+
+    <h3>Marriage</h3>
+    <p>Marriage is a preferred indifferent: the wise man marries, but passion for one's own wife is still a passion. The maxim preserved by Jerome: "the man who is too ardent a lover of his own wife is an adulterer" (<i>Against Jovinian</i> 1.49). Jerome gives the line to Sextus the Pythagorean; scholars place it among the material from Seneca's lost <i>On Marriage</i> that Jerome was using, so say that it reaches us through a hostile, much later source and treat it as evidence of the Stoic ideal. The positive picture is Seneca's own: "My wife Paulina is anxious for me; and because I know that her breath depends on mine, I begin, in caring for her, to care for myself... for her sake I command myself to grow old" (<i>Letter</i> 104.1 to 5). Tacitus records that at his death she opened her own veins and was saved on Nero's order (<i>Annals</i> 15.63 to 64). This is love redirected from passion to partnership, not the absence of love.</p>
+
+    <h3>Men and women</h3>
+    <p>Seneca works inside the Roman vocabulary of <i>virtus</i>: the question is self-mastery, and for a citizen the role that nature assigns. <i>Letter</i> 95.20 to 21 attacks women who have matched men's licence in drink and vice and who, "born to be passive", take the male part; <i>Letter</i> 122.7 lists among those who live against nature the men who exchange their dress with women and keep a boy's smoothness past its time. In both the moral failure, in Stoic terms, is the mind's assent to what nature rejects. Treat this as evidence of Roman elite discourse and name the framework; do not import modern approval or condemnation into AO1. A wife is a partner in virtue, and the mother Seneca praises in the <i>Consolation to Helvia</i> never painted her face or wore revealing dress. Edwards reads his moralising as performance indexed to anxieties about elite masculinity.</p>
+
+    <h3>Good and bad conduct</h3>
+    <p>Good conduct is governing oneself: <i>temperantia</i>, refusing assent, loving with judgement. Bad conduct is any surrender to passion, in the brothel or in the marriage bed. The man who governs his desire is, in this discourse, the image of the man fit to govern the state (Griffin). The hypocrisy charge, that the courtier of Nero preached what he could not live, is the standard evaluation point against him, and the standard reply is that the tension between strict doctrine and Roman practice is the philosophical project itself.</p>
+
+    <div class="symptom">
+      <span class="s">Letter 9: the wise man loves his friends</span><span class="s">On the Happy Life 7.3: pleasure is a low thing</span><span class="s">Phaedra 184 to 185: vicit ac regnat furor</span><span class="s">On Anger 2.2 to 2.4: first movements, then assent</span><span class="s">the Nurse: resist love at the first (132 to 135)</span><span class="s">Letter 116: no moderate passion</span><span class="s">Jerome: the too ardent lover of his wife</span><span class="s">Letter 104: Paulina</span>
+    </div>
+
+    <div class="bookpage">
+      <div class="bpdate">Date: ____________</div>
+      <div class="bptitle">Notes 5: Seneca on the seven questions (first sketch, to be revised)</div>
+      <table>
+        <tr><th style="width:24%">Question</th><th>Seneca's position</th><th style="width:26%">Reference</th></tr>
+        <tr><td>What love is</td><td>Friendship (amicitia), a rational attachment: the wise man wants a friend in order to serve him, loves him, and bears his loss with an even mind. Love as pleasure is a passion, "a low thing".</td><td><i>Letter</i> 9; <i>On the Happy Life</i> 7.3</td></tr>
+        <tr><td>Love and desire</td><td>Different in kind: desire (cupiditas) is a false judgement plus an impulse; love of friend or wife is a rational feeling the wise person keeps. A want against a need.</td><td><i>Letter</i> 9; <i>On Anger</i> 2; 2024 mark scheme</td></tr>
+        <tr><td>Desire and the body</td><td>Phaedra: "Madness has conquered and now reigns"; the mind goes headlong, knowing; no food, no sleep, pallor (the Nurse); fire in the marrow. First movements are not in our power; the passion begins with assent.</td><td><i>Phaedra</i> 177 to 185; 360 to 386; 640 to 644; <i>On Anger</i> 2.2 to 2.4</td></tr>
+        <tr><td>Control of desire</td><td>Refuse assent at the first: "Whoever resists love at the first and drives it out is safe and the victor." No moderate passion: "Our school drives them all out." Rehearse loss in advance.</td><td><i>Phaedra</i> 132 to 135; <i>Letter</i> 116.1; <i>On Tranquillity</i> 11</td></tr>
+        <tr><td>Marriage</td><td>A preferred indifferent. "The too ardent lover of his own wife is an adulterer" (via Jerome, who gives it to Sextus; placed among Seneca's <i>On Marriage</i> material). Paulina: "for her sake I command myself to grow old"; she opened her veins at his death.</td><td>Jerome, <i>Against Jovinian</i> 1.49; <i>Letter</i> 104.1 to 5; Tacitus, <i>Annals</i> 15.63 to 64</td></tr>
+        <tr><td>Men and women</td><td>Roman virtus and the role nature assigns: women who, "born to be passive", take the male part (<i>Letter</i> 95); men who live against nature in dress and smoothness (<i>Letter</i> 122); the fault is assent. A wife is a partner in virtue; Helvia never painted her face. Edwards: moralising as performance.</td><td><i>Letter</i> 95.20 to 21; <i>Letter</i> 122.7; <i>Consolation to Helvia</i> 16</td></tr>
+        <tr><td>Good and bad conduct</td><td>Good: self-government, temperantia, loving with judgement. Bad: surrender to passion anywhere, marriage included. The hypocrisy charge and its reply.</td><td><i>Letter</i> 116; Griffin; Edwards</td></tr>
+      </table>
+      <div class="rule"><b>Rule</b>Seneca rejects <b>passion</b>, which for him is a judgement rather than a feeling, and keeps love as friendship. "Seneca fears desire" (June 2023) is a half-truth you must correct in the first paragraph.</div>
+    </div>
+    <label class="copyrow"><input type="checkbox" data-save="copied_seneca"> I have copied these notes into my book</label>
+
+    <div class="gate" data-gate="copied_seneca" data-msg="Tick 'I have copied these notes' to unlock the check.">
+      <h3>Check 5: Seneca</h3>
+      <div id="mcD"></div>
+      <input type="hidden" data-save="mcD_1"><input type="hidden" data-save="mcD_2"><input type="hidden" data-save="mcD_3"><input type="hidden" data-save="mcD_4"><input type="hidden" data-save="mcD_5"><input type="hidden" data-save="score_D">
+    </div>
+
+    <div class="qbox">
+      <p class="q">Section 5 practice: the June 2024 10-mark question was "Seneca describes desire as a kind of 'captivity'. Explain Seneca's advice about how to handle desire wisely." Write the first four sentences, using the Nurse and Letter 116.</p>
+      <textarea data-save="q_seneca" placeholder="Seneca's advice rests on the Stoic claim that a passion begins only when... So the Nurse in Phaedra..."></textarea>
+      <div class="wc" data-wc="q_seneca">0 words</div>
+    </div>
+  </section>
+
+  <!-- SECTION 6: THE GRID -->
+  <section>
+    <div class="sechead"><h2>6. The grid: four voices, seven questions</h2><span class="mins">10 min</span></div>
+    <p class="obj">This is the page you revise from. Each cell is one line and one reference, condensed from Notes 2 to 5. Copy it across a double page of your book, landscape, one column per voice, and leave space in the Seneca column and in the Ovid cells marked with a dagger (†) for what is still to come. Read it across a row to see a comparison; read it down a column to see a voice.</p>
+
+    <div class="bookpage">
+      <div class="bpdate">Date: ____________</div>
+      <div class="bptitle">Notes 6: The grid</div>
+      <table class="grid4">
+        <tr><th style="width:12%">Question</th><th>Plato</th><th>Sappho</th><th>Ovid (the teacher)</th><th>Seneca (sketch)</th></tr>
+        <tr><th>What love is</th>
+          <td>Desire for what one lacks; finally for Beauty itself. <i>Symp.</i> 200a to 201c; 211</td>
+          <td>A force that acts on her: "loosens the limbs... Bitter-sweet, invincible". Fr 130</td>
+          <td>A technique: "love lasts long through art"; "the ways of being loved". 3.42; 3.28</td>
+          <td>Rational friendship: the wise man loves his friends and bears their loss with an even mind. <i>Letter</i> 9</td></tr>
+        <tr><th>Love and desire</th>
+          <td>Eros is desire; its objects are ranked on a ladder; the body is the first rung. <i>Symp.</i> 210a to 212a</td>
+          <td>Not separated: "the longing consumes her flighty soul". Fr 96; 94</td>
+          <td>Desire is the subject; use youth now: "pluck the flower". 3.79 to 80. † Desire needs obstacles, 579, 598</td>
+          <td>Different in kind: desire is a passion, a false judgement; love of friend or wife is rational. <i>On Anger</i> 2</td></tr>
+        <tr><th>Desire and the body</th>
+          <td>Shudder, sweat, heat, sleepless aching: the body answers the soul's recollection. <i>Phdr.</i> 251a</td>
+          <td>"My tongue breaks... A delicate fire... greener than grass... On the point of death". Fr 31</td>
+          <td>The body is material to be worked: "Art imitates chance"; "art delights in its hidden face". 3.155; 210. † 793 to 802</td>
+          <td>Phaedra: "Madness has conquered and now reigns"; first movements, then assent. <i>Phaedra</i> 184 to 185; 360 to 386</td></tr>
+        <tr><th>Control of desire</th>
+          <td>By reason: the charioteer reins the unruly horse; desire redirected upward. <i>Phdr.</i> 253c to 254e</td>
+          <td>Not controlled: petitioned. "Be my ally"; "Once again". Fr 1; 130</td>
+          <td>Of the performance, by manners: "measure here as in most things"; taught tears and laugh. 3.305; 281 to 296. † 372; 573</td>
+          <td>Refuse assent at the first: "Whoever resists love at the first and drives it out is safe and the victor." <i>Phaedra</i> 132 to 135; <i>Letter</i> 116</td></tr>
+        <tr><th>Marriage</th>
+          <td>The lowest route to immortality; children of the mind are better; no private marriages in the ideal city. <i>Symp.</i> 208e to 209e; <i>Rep.</i> 5</td>
+          <td>Celebrated and costed: "Like Ares"; "Virginity, virginity, where have you gone?" Fr 111; 112; 114; 105c</td>
+          <td>Faithful wives listed and dismissed; childbirth "the field's exhausted". 3.11 to 25; 82. † 431 to 432; 585 to 586; Procris</td>
+          <td>A preferred indifferent; "the too ardent lover of his own wife is an adulterer"; Paulina. Jerome 1.49; <i>Letter</i> 104</td></tr>
+        <tr><th>Men and women</th>
+          <td>Love between males ranked highest; women as examples and as Diotima's reported voice. <i>Symp.</i> 181c; 191e</td>
+          <td>A woman desiring women, among women; Helen acts. Fr 31; 94; 16; 160</td>
+          <td>"Go equal to the fight", then the male "we"; women as Sirens; a voice as "procuress". 3.3; 133; 311 to 316. † 673; 812</td>
+          <td>Roman virtus and the role nature assigns, for women (<i>Letter</i> 95) and men (<i>Letter</i> 122); a wife as partner in virtue. <i>Helvia</i> 16</td></tr>
+        <tr><th>Good and bad conduct</th>
+          <td>Good: yielding for virtue; bad: love of the body only, the lover who flies away. <i>Symp.</i> 183d to 184e</td>
+          <td>Good: tenderness and memory; bad: the unpoetic, the unrefined, the one who runs off. Fr 94; 55; 57; 131</td>
+          <td>Good conduct is what works: follow the goddesses, never say "Not now". 3.87 to 98. † fraud for fraud, 491 to 492</td>
+          <td>Good: self-government, loving with judgement; bad: assent to passion anywhere. <i>Letter</i> 116</td></tr>
+      </table>
+      <div class="rule"><b>Rule</b>Across a row, the four cells are a comparison waiting to be written. Down a column, the seven cells are a voice. The paper asks for rows.</div>
+    </div>
+    <label class="copyrow"><input type="checkbox" data-save="copied_grid"> I have copied the grid into my book</label>
+
+    <div class="gate" data-gate="copied_grid" data-msg="Tick 'I have copied the grid' to unlock the check.">
+      <h3>Check 6: whose voice?</h3>
+      <p class="small">Twelve ideas and quotations from the grid. Click the voice each one belongs to. One attempt each.</p>
+      <div id="mcS"></div>
+      <input type="hidden" data-save="sort_1"><input type="hidden" data-save="sort_2"><input type="hidden" data-save="sort_3"><input type="hidden" data-save="sort_4"><input type="hidden" data-save="sort_5"><input type="hidden" data-save="sort_6"><input type="hidden" data-save="sort_7"><input type="hidden" data-save="sort_8"><input type="hidden" data-save="sort_9"><input type="hidden" data-save="sort_10"><input type="hidden" data-save="sort_11"><input type="hidden" data-save="sort_12"><input type="hidden" data-save="score_sort">
+    </div>
+
+    <div class="qbox">
+      <p class="q">Grid practice: choose one row. Write it out as a single comparative sentence that names all four voices and uses "whereas" or "by contrast" at least once.</p>
+      <textarea data-save="q_grid" placeholder="On the control of desire, Plato..., whereas Seneca..., while Sappho... and the teacher in Ovid..."></textarea>
+      <div class="wc" data-wc="q_grid">0 words</div>
+    </div>
+  </section>
+
+  <!-- SECTION 7: AGREE AND DISAGREE -->
+  <section>
+    <div class="sechead"><h2>7. Where they agree and where they disagree</h2><span class="mins">14 min</span></div>
+    <p class="obj">Six pairs, because the paper sets pairs. Each pair has three lists: where the two writers agree, where they disagree, and where it depends which passage you choose. The third list is the one that earns the top band, because that is where evaluation comes from: the writers are not consistent, and showing that you know it is AO2.</p>
+
+    <div class="pair">
+      <h3>Plato and Sappho</h3>
+      <div class="pair3">
+        <div class="agree"><h5>Agree</h5><ul>
+          <li>Love is a desire for what one lacks: Socrates' argument (200a to 201c) and Fragment 16's turn to Anactoria "Who is not here with me". Carson's reading of Sappho and Diotima's Eros, child of Poverty, say the same thing.</li>
+          <li>The body registers desire first: <i>Phaedrus</i> 251a and Fragment 31 give the same symptoms.</li>
+          <li>Something outlasts the body: Fragment 50 ("A good man will become handsome") and Fragment 55 (the Muses' roses) are Sappho's nearest moves toward soul and immortality.</li>
+        </ul></div>
+        <div class="disagree"><h5>Disagree</h5><ul>
+          <li>What to do with the lack: Plato's lover climbs away from the one body (210a to 212a); Sappho's speaker stays with the one named woman. Vlastos says Plato's theory cannot love a whole person; Sappho loves "her lovely walk, And her gleaming face".</li>
+          <li>Who speaks: in Plato the desiring subject is male and the woman's doctrine is reported; in Sappho a woman desires in her own voice (duBois).</li>
+          <li>Define against describe: Plato wants an account of eros; Sappho gives its effects and never asks what it is.</li>
+        </ul></div>
+        <div class="depends"><h5>Depends on the passage</h5><ul>
+          <li>Is Plato for or against desire? The charioteer (253c) and <i>Republic</i> 3 say rein it; the divine madness (244a) and Alcibiades say it is the most alive thing in the dialogue (Nussbaum).</li>
+          <li>Is Sappho warning or celebrating? Fragment 31 ends "On the point of death"; Fragment 94 remembers desire satisfied on "a soft bed"; the June 2022 question turned on this.</li>
+        </ul></div>
+      </div>
+    </div>
+
+    <div class="pair">
+      <h3>Plato and Ovid</h3>
+      <div class="pair3">
+        <div class="agree"><h5>Agree</h5><ul>
+          <li>Desire is produced by lack and distance. Diotima's Eros is always poor; the teacher will manufacture the lack on purpose in Part XIV (†"What's easily given nourishes love poorly", 579).</li>
+          <li>Love is something you can be taught to do well: Diotima's "right way" of loving (210a) and the teacher's "ways of being loved" (3.28) are both curricula, even if their destinations are opposite.</li>
+          <li>Fame outlasts the body: Diotima's children of Homer (209c) and the teacher's "What do sacred poets seek but fame?" (†403) and his own name on the shelf (3.339 to 348).</li>
+        </ul></div>
+        <div class="disagree"><h5>Disagree</h5><ul>
+          <li>The direction of travel: Plato's ladder leaves the body behind; the teacher keeps love on the bottom rung and makes even that a matter of technique.</li>
+          <li>Control: Plato controls the desire by reason; the teacher controls the performance by manners and leaves the desire exactly where it is.</li>
+          <li>What love is for: virtue and immortality against pleasure and a game ("Only playful passions will be learnt from me", 3.27).</li>
+        </ul></div>
+        <div class="depends"><h5>Depends on the passage</h5><ul>
+          <li>Does Ovid know anything about the soul? The catalogue of defects says no; the games section (†369 to 380, "in a game the naked heart's exposed") treats the woman as a person with a character for twelve lines.</li>
+          <li>Is the teacher's praise of fairness real? "Go equal to the fight" (3.3) against "the ways of being loved" (3.28), two lines apart.</li>
+        </ul></div>
+      </div>
+    </div>
+
+    <div class="pair">
+      <h3>Sappho and Ovid</h3>
+      <div class="pair3">
+        <div class="agree"><h5>Agree</h5><ul>
+          <li>Love is bodily and visible: the trembling, the pallor, the walk, the laugh. Both poets write about the same features of a beloved.</li>
+          <li>Adornment matters: Fragment 81's garlands for Dika and Fragment 98a's headband sit beside the hair lessons of 3.133 to 168. Kurke's refinement (habrosyne) is a value in both worlds.</li>
+          <li>Youth passes: Fragment 121 ("I never want to be the older one") and the teacher's "the years go by like flowing waters" (3.62).</li>
+        </ul></div>
+        <div class="disagree"><h5>Disagree</h5><ul>
+          <li>Who does the loving: Sappho's speaker suffers desire ("Love... shakes me"); the teacher's pupil produces it in someone else ("Art imitates chance").</li>
+          <li>The beloved's features: in Sappho nothing about the beloved is a defect; the Ovidian pupil learns to see her own body as a list of faults (3.263 to 278).</li>
+          <li>The laugh: Fragment 31 loves "charming laughter" for its power over the speaker; the teacher muffles it (3.281 to 290) for its power over him (Merriam).</li>
+          <li>Sincerity: Sappho's "Honestly, I want to die" (94) against taught tears (3.291).</li>
+        </ul></div>
+        <div class="depends"><h5>Depends on the passage</h5><ul>
+          <li>Does either poet celebrate desire? Sappho 130 calls it "invincible" and 31 ends near death; the teacher's carpe diem is a celebration and also a sales technique.</li>
+          <li>Is the Ovidian advice useless to a woman? The hair menu and the catalogue of defects are the most practical material in the unit (Gibson: technical, inclusive); the June 2022 mark scheme credited exactly that.</li>
+        </ul></div>
+      </div>
+    </div>
+
+    <div class="pair">
+      <h3>Plato and Seneca</h3>
+      <div class="pair3">
+        <div class="agree"><h5>Agree</h5><ul>
+          <li>Desire untreated overwhelms reason, and the body shows it first: <i>Phaedrus</i> 251a and <i>Phaedra</i> 360 to 386 describe the same symptoms.</li>
+          <li>Love is rescued by being redirected, not abolished: Plato toward Beauty, Seneca toward the friend's virtue and the wise person's self-sufficiency.</li>
+          <li>The philosopher's self-control is the model: Socrates refusing Alcibiades (219c to d) and the wise man of <i>Letter</i> 9.</li>
+          <li>Marriage is below the highest love: the lowest rung of immortality for Diotima, a preferred indifferent for Seneca.</li>
+        </ul></div>
+        <div class="disagree"><h5>Disagree</h5><ul>
+          <li>The soul: Plato's is in three parts and reason fights appetite (the two horses); Seneca's mind is one thing, and passion is its own mistaken judgement.</li>
+          <li>Partial success: Plato honours the lover who does not quite ascend (<i>Phaedrus</i> 256c to d); Seneca rejects moderate passion as moderate disease (<i>Letter</i> 116).</li>
+          <li>Where the goal is: metaphysical (the Form of Beauty) against ethical (virtue, apatheia).</li>
+          <li>Same-sex love: Pausanias and the <i>Phaedrus</i> make the male pair the privileged form; Seneca's frame is Roman role and virtus (<i>Letters</i> 95 and 122).</li>
+        </ul></div>
+        <div class="depends"><h5>Depends on the passage</h5><ul>
+          <li>Whether Plato "encourages" desire: the ladder begins with one body and the madness is divine, but <i>Republic</i> 3 and 9 sound as strict as Seneca.</li>
+          <li>Whether Seneca is cold: <i>Letter</i> 116 and the Jerome maxim against <i>Letter</i> 104 on Paulina.</li>
+        </ul></div>
+      </div>
+    </div>
+
+    <div class="pair">
+      <h3>Seneca and Sappho</h3>
+      <div class="pair3">
+        <div class="agree"><h5>Agree</h5><ul>
+          <li>What desire does: Fragment 31's catalogue and the Nurse's report of Phaedra (360 to 386) are the same clinical picture.</li>
+          <li>Desire returns and is hard to fight: "Once again shakes me! Bitter-sweet, invincible" (130) is the condition the Nurse warns about ("refuses too late to bear the yoke").</li>
+          <li>Something is worth more than wealth or looks: Fragment 148 ("Wealth without virtue can be a harmful neighbour") and Fragment 50 are lines Seneca could sign.</li>
+        </ul></div>
+        <div class="disagree"><h5>Disagree</h5><ul>
+          <li>The response: Sappho petitions Aphrodite and submits; Seneca refuses assent and governs.</li>
+          <li>Is it a judgement? For Seneca the passion is a false belief one can decline; for Sappho eros is "invincible", a god, not a mistake.</li>
+          <li>Memory: Fragment 94's "remember me" keeps the attachment alive; the wise man bears a friend's loss with an even mind.</li>
+          <li>Marriage: Sappho's wedding songs pour Aphrodite's honey over the groom's face (112); Seneca's husband must not love his wife too ardently.</li>
+        </ul></div>
+        <div class="depends"><h5>Depends on the passage</h5><ul>
+          <li>Whether Sappho celebrates desire at all: 94 and 2 yes; 31, 1 and 130 record it as suffering, which is nearer to Seneca than the June 2023 statement allows.</li>
+          <li>Whether Seneca fears desire: Phaedra and the Nurse yes; <i>Letter</i> 104 shows affection commanding self-care, which is not fear.</li>
+        </ul></div>
+      </div>
+    </div>
+
+    <div class="pair">
+      <h3>Seneca and Ovid</h3>
+      <div class="pair3">
+        <div class="agree"><h5>Agree</h5><ul>
+          <li>Time is short and must be used: <i>Letter</i> 1 and the teacher's "Life's to be used: life slips by on swift feet" (3.65) share a premise and draw opposite conclusions.</li>
+          <li>Anger spoils the face and the judgement: <i>On Anger</i> and the teacher's (†) "Anger swells the face: the veins darken with blood" (503). Symptom shared, cure different.</li>
+          <li>Measure: the teacher's "measure here as in most things" (3.305) is a rule of moderation Gibson calls a real middle way; for Seneca moderation of a passion is impossible, but moderation of conduct is virtue.</li>
+          <li>Both are Roman, both write under an emperor, both keep the married woman at arm's length: Seneca by doctrine, the teacher by disclaimer (3.58).</li>
+        </ul></div>
+        <div class="disagree"><h5>Disagree</h5><ul>
+          <li>Where the danger is: for Seneca the danger of desire is inside the person who desires; for the teacher the danger is incompetence ("your art was lacking", 3.42) and, later, deceivers and thieves (†433 to 454).</li>
+          <li>Appearance: cultus is the teacher's governing value; for Seneca care of the body is time stolen from the mind, and the mirror is the instrument of vanity (<i>Natural Questions</i> 1.17).</li>
+          <li>Pleasure: "a low thing, slavish, weak, perishable" against "Have fun while it's allowed" (3.61).</li>
+          <li>Marriage: the one loving marriage in the unit's Roman material is Seneca and Paulina; the teacher's wives are dowdy (3.109 to 112) and (†) unloved because available (585 to 586).</li>
+        </ul></div>
+        <div class="depends"><h5>Depends on the passage</h5><ul>
+          <li>Whether the teacher gives useful guidance (June 2022): practical lessons on hair, dress, defects and manners against Seneca's praise of the unpainted Helvia. The mark scheme credits both.</li>
+          <li>Whether Ovid also sees desire as threatening (June 2024): the proem denies any loss (3.89 to 92), but his own exempla of Medea, Ariadne, Phyllis and Dido (3.33 to 40) are women desire destroyed.</li>
+        </ul></div>
+      </div>
+    </div>
+
+    <div class="callout"><b>The synoptic hinge.</b> Across all six pairs, one axis sorts the four voices: <b>what happens to desire</b>. Sappho suffers it, Plato redirects it upward, Seneca refuses it at the door, and Ovid's teacher manufactures it in someone else. Every real question on this paper can be answered by starting from that axis and then showing where the chosen writers are not consistent with themselves.</div>
+
+    <div class="bookpage">
+      <div class="bpdate">Date: ____________</div>
+      <div class="bptitle">Notes 7: The six pairs in one table</div>
+      <table>
+        <tr><th style="width:16%">Pair</th><th>Agree</th><th>Disagree</th><th>Depends on the passage</th></tr>
+        <tr><td>Plato and Sappho</td><td>Love is lack (200a to 201c; Fr 16); the body registers it first (<i>Phdr.</i> 251a; Fr 31).</td><td>Plato climbs away from the one body; Sappho stays with the named woman (Vlastos). Male subject against a woman's voice (duBois). Define against describe.</td><td>Plato: charioteer against divine madness. Sappho: 31's death against 94's soft bed.</td></tr>
+        <tr><td>Plato and Ovid</td><td>Desire needs lack; love can be taught; fame outlasts the body (209c; 3.339 to 348).</td><td>Ladder up against bottom rung by technique; reason against manners; virtue against a game.</td><td>The games section (†372) gives the woman a character. "Go equal" (3.3) against "being loved" (3.28).</td></tr>
+        <tr><td>Sappho and Ovid</td><td>Love is bodily and visible; adornment matters (Fr 81, 98a; 3.133 to 168); youth passes (Fr 121; 3.62).</td><td>Suffering desire against producing it; the beloved's features against a list of faults; "charming laughter" loved against the laugh muffled (Merriam); "Honestly" against taught tears.</td><td>Does either celebrate? (130, 31 against 3.59 to 82.) Is the advice useful? (Gibson; June 2022.)</td></tr>
+        <tr><td>Plato and Seneca</td><td>Desire overwhelms reason; love is redirected not abolished; the philosopher's self-control; marriage below the highest love.</td><td>Three-part soul against one mind; partial success honoured against no moderate passion; Beauty against virtue; the male pair against Roman virtus.</td><td>Plato strict in <i>Rep.</i> 3 and 9. Seneca warm in <i>Letter</i> 104.</td></tr>
+        <tr><td>Seneca and Sappho</td><td>The same clinical picture (Fr 31; <i>Phaedra</i> 360 to 386); desire returns; virtue above wealth (Fr 148, 50).</td><td>Petition against refusal; a god against a mistake; "remember me" against the even mind at a friend's loss; Aphrodite's honey against the ardent husband as adulterer.</td><td>Sappho as sufferer (31, 1, 130) is nearer Seneca than "celebrate" allows. Seneca as husband (104) is not fear.</td></tr>
+        <tr><td>Seneca and Ovid</td><td>Time is short (<i>Letter</i> 1; 3.65); anger spoils the face; measure; the married woman kept outside.</td><td>Danger inside the person against incompetence and thieves; mind against cultus; pleasure "low" against "Have fun"; Paulina against the dowdy wives.</td><td>Useful guidance (June 2022) both ways. Desire threatening (June 2024): the proem denies loss, the exempla show it.</td></tr>
+      </table>
+      <div class="rule"><b>Rule</b>Sort the four by what happens to desire: Sappho suffers it, Plato redirects it, Seneca refuses it, Ovid's teacher manufactures it. Then show where each writer contradicts himself. That second move is the top band.</div>
+    </div>
+    <label class="copyrow"><input type="checkbox" data-save="copied_pairs"> I have copied these notes into my book</label>
+
+    <div class="gate" data-gate="copied_pairs" data-msg="Tick 'I have copied these notes' to unlock the check.">
+      <h3>Check 7: agree or disagree?</h3>
+      <div id="mcP"></div>
+      <input type="hidden" data-save="mcP_1"><input type="hidden" data-save="mcP_2"><input type="hidden" data-save="mcP_3"><input type="hidden" data-save="mcP_4"><input type="hidden" data-save="mcP_5"><input type="hidden" data-save="mcP_6"><input type="hidden" data-save="score_P">
+    </div>
+
+    <div class="qbox">
+      <p class="q">Pair practice: pick the pair you find hardest. Write one "depends on the passage" point of your own that is not in the list above, with the two references that pull in opposite directions.</p>
+      <textarea data-save="q_pairs" placeholder="For ... and ..., it depends whether you choose ... (where ...) or ... (where ...)."></textarea>
+      <div class="wc" data-wc="q_pairs">0 words</div>
+    </div>
+  </section>
+
+  <!-- SECTION 8: HOW TO COMPARE -->
+  <section>
+    <div class="sechead"><h2>8. How to write the comparison</h2><span class="mins">12 min</span></div>
+    <p class="obj">The grid gives you the content of a comparison. This section gives you its shape. A comparative paragraph has five rungs, in order, and the rung most candidates miss is the fourth, where the second writer enters. The three model paragraphs that follow answer three real questions, one for each kind of pairing the paper sets, so that you can see the same five rungs carrying different material.</p>
+
+    <div class="rung"><span class="rname">1. Point</span><div class="stem">A claim that answers the question and already contains the comparison: "Sappho and the teacher both write about a woman's laugh, and they want opposite things from it."</div></div>
+    <div class="rung"><span class="rname">2. Source</span><div class="stem">A short quotation in the OCR wording with its number, or a precise paraphrase with the dialogue or letter named, woven into your sentence.</div></div>
+    <div class="rung"><span class="rname">3. Analysis</span><div class="stem">Name the technique or the argument and explain its effect. This is AO2. A scholar's idea can be used here, with the scholar named, and then tested against the text.</div></div>
+    <div class="rung"><span class="rname">4. Comparison</span><div class="stem">The hinge sentence: "whereas", "by contrast", "where Plato..., Sappho...". The second writer gets a quotation or reference of their own, not a summary. Say <b>why</b> they differ: genre, purpose, audience, philosophy.</div></div>
+    <div class="rung"><span class="rname">5. Evaluation</span><div class="stem">A judgement with a reason: which presentation is more convincing, more realistic, more honest, and because of what. A second scholar, agreed with or argued against, belongs here.</div></div>
+
+    <div class="cards">
+      <div class="pcard"><h4>Failure 1: the list</h4><p>"Plato thinks love is lack. Sappho thinks love is a force. Ovid thinks love is a game." Three true sentences and no comparison. The examiner cannot award AO2 because nothing has been related to anything. Fix: a hinge sentence that puts two writers in one sentence and says what the difference means.</p></div>
+      <div class="pcard"><h4>Failure 2: false symmetry</h4><p>"Both Sappho and Seneca describe the symptoms of desire." True, and it stops where the interesting part begins. Fix: after the agreement, the disagreement: they describe the same symptoms and respond in opposite ways, and the reason is that one is a lyric poet reporting and the other a Stoic prescribing.</p></div>
+      <div class="pcard"><h4>Failure 3: no judgement</h4><p>Two writers compared accurately, and the paragraph ends. The 30-mark grid wants evaluation: which view is more convincing, and why. Fix: one sentence of judgement with "because", and ideally a scholar you agree or disagree with.</p></div>
+      <div class="pcard"><h4>The question's own words</h4><p>Every real question has a loaded word: "warns", "celebrate", "fears", "realistically", "education", "necessary", "different". Define it in the first paragraph and test each writer against it. "Seneca fears desire" is where the 2023 essay starts, and the top answers showed that "fears" is the wrong verb for a man who thinks desire is a mistake.</p></div>
+    </div>
+
+    <h3>Three model paragraphs: the same five rungs, three real questions</h3>
+    <p class="small">Each paragraph is a body paragraph, not an introduction. Read it, then read the anatomy table under it, which shows where each rung falls.</p>
+
+    <details>
+      <summary>Model paragraph 1. June 2023, 30 marks: "Seneca fears desire, but Sappho and Ovid celebrate it." (Sappho and Seneca)</summary>
+      <div class="body">
+        <div class="exem strong">
+          <p>The statement is wrong about Sappho before it is wrong about Seneca, because the fragment that comes nearest to defining desire records it as an assault rather than a pleasure: "Love which loosens the limbs Once again shakes me! Bitter-sweet, invincible creature that he is" (Fragment 130). The verb is violent, the word order puts the sweetness first and the bitterness second (Carson's point that <i>glukupikron</i> describes the order of the experience), and "invincible" concedes the fight before it starts; this is not a celebration but a report from the losing side. Seneca would recognise every symptom, since his Phaedra says "Madness has conquered and now reigns" (<i>Phaedra</i> 184) and her Nurse reports that she neither eats nor sleeps (360 to 386), whereas he would refuse Sappho's conclusion: for the Stoic the "invincible creature" is a false judgement the mind has assented to, and the Nurse's rule that "Whoever resists love at the first and drives it out is safe and the victor" turns Sappho's "Once again" into a failure of discipline rather than the act of a god. The difference is one of genre and purpose: a lyric poet performing for her companions has no reason to prescribe, and a philosopher writing to Lucilius has no other reason to write. Sappho's account is the more honest of the two about what desire feels like from inside, because Seneca's own tragedy has to admit, through Phaedra, that the moment of assent is not experienced as a choice; but "fears" is still the wrong verb for Seneca, whose position is that there is nothing to fear in a judgement one can decline.</p>
+        </div>
+        <table>
+          <tr><th style="width:18%">Rung</th><th>Where it is, and what it does</th></tr>
+          <tr><td>1 Point</td><td>"The statement is wrong about Sappho before it is wrong about Seneca": the claim contains the comparison and takes a position on the question's loaded words.</td></tr>
+          <tr><td>2 Source</td><td>Fragment 130 in the OCR wording with its number, embedded in the sentence.</td></tr>
+          <tr><td>3 Analysis</td><td>The verb, the word order, "invincible"; Carson named and used for one specific point, not as decoration.</td></tr>
+          <tr><td>4 Comparison</td><td>"Seneca would recognise... whereas he would refuse": agreement first, then the hinge, then Seneca's own evidence (Phaedra, the Nurse), then the reason for the difference (genre and purpose).</td></tr>
+          <tr><td>5 Evaluation</td><td>"Sappho's account is the more honest... because"; and a correction of the question's verb, which is the examiner's own AO2 point.</td></tr>
+        </table>
+        <p class="small"><b>How to adapt it.</b> For the Ovid half of the same question, keep the Seneca rung and change the Point: "The teacher does celebrate desire, and the celebration is a sales technique", with 3.61 to 62 and 3.89 to 90 as the source and Gibson's stock seducer's line as the scholar.</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>Model paragraph 2. June 2025, 30 marks: "The poems of Sappho give a much better education about love and relationships for women than those of Ovid." (Sappho and Ovid)</summary>
+      <div class="body">
+        <div class="exem strong">
+          <p>The clearest test of the statement is what each poet does with a woman's laugh, because both treat it as powerful and only one treats it as hers. In Fragment 31 the beloved's "charming laughter" is what "strikes terror into the heart in my breast": the laugh belongs to the woman who laughs, and its effect on the listener is the whole subject of the poem, told from the listener's side. The teacher in <i>Ars</i> 3 hears the same power and sets out to remove it: "Who'd believe it? Girls must even learn to laugh" (3.281), after which the laugh is reduced to "a small dimple either side" with "the teeth mostly concealed by the lips" (3.283 to 284) and the woman who laughs freely is "like a mangy ass braying at the shameful mill" (3.290). Merriam's reading explains the difference: in elegy the woman and the gods of love laugh at the lover from a position of power, and the teacher cannot forbid the laugh, so he persuades women that it is ugly, which means the beauty advice is the management of a man's fear. Where Sappho's poem educates a woman by giving her desire a voice, the teacher's lesson educates her into a performance scripted by its audience, and the difference is one of purpose: Sappho sings "for my companions" (160), the teacher speaks of "us" and "we" throughout a book addressed to women (3.132, 133). The statement is therefore largely right, but "education" needs qualifying, since Gibson is also right that the teacher's advice on hair, dress and defects is the most practical material in the unit; what Sappho offers is not instruction at all but the record of a woman's experience, which is a different kind of education and, for the question's purposes, the better one.</p>
+        </div>
+        <table>
+          <tr><th style="width:18%">Rung</th><th>Where it is, and what it does</th></tr>
+          <tr><td>1 Point</td><td>"both treat it as powerful and only one treats it as hers": one feature, two poets, one difference.</td></tr>
+          <tr><td>2 Source</td><td>Fragment 31 first; then three short Ovid quotations with line numbers, which is the AO1 density the 30-mark grid wants.</td></tr>
+          <tr><td>3 Analysis</td><td>Whose laugh it is; the dimple and the ass as the technique of diminishment; Merriam's mechanism stated and attributed.</td></tr>
+          <tr><td>4 Comparison</td><td>"Where Sappho's poem educates... the teacher's lesson educates her into a performance": the hinge, then the reason (purpose and audience) with a reference for each side.</td></tr>
+          <tr><td>5 Evaluation</td><td>"largely right, but 'education' needs qualifying": a judgement, a second scholar argued with (Gibson), and a definition of the question's loaded word.</td></tr>
+        </table>
+        <p class="small"><b>How to adapt it.</b> For the November 2020 question ("Ovid shows no understanding of women"), keep the Ovid rungs and change the Point: "The teacher understands exactly what women do and refuses to see it as anything but stagecraft", with 3.209 to 234 as the source and James on "He lets the women see too much" as the second scholar.</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>Model paragraph 3. June 2025, 30 marks: Discuss to what extent you agree that Plato's and Seneca's ideals of love were different. (Plato and Seneca)</summary>
+      <div class="body">
+        <div class="exem strong">
+          <p>The two philosophers describe the same emergency and prescribe different rescues, which makes their ideals less different than their methods. Plato's picture is the charioteer whose unruly horse "drags toward sexual pleasure" at the sight of the beloved until the driver pulls back on the reins (<i>Phaedrus</i> 253c to 254e): the soul has parts, reason fights appetite, and the struggle is itself the beginning of the ascent, since the lover who wins approaches the beloved "with reverence" and the one who partly fails still "gains something" (256c to d). Seneca has no horse to fight, because for the Stoic the mind is one thing and a passion is its own mistaken judgement: desire begins not with the sight of the beloved but with the assent that follows it (<i>On Anger</i> 2.2 to 2.4), so the only rescue is to resist "at the first", as the Nurse puts it, and there is no honourable partial success, since "Our school drives them all out. The Peripatetics moderate them" (<i>Letter</i> 116.1). Where Plato redirects desire upward and keeps it, Seneca declines it and keeps only the rational attachment of friendship, the wise man who wants a friend in order to serve him and bears his loss with an even mind (<i>Letter</i> 9), and the difference is one of destination: Beauty itself for the one, the friend's virtue and the wise man's self-sufficiency for the other. Both ideals, though, rescue love by moving it away from the body, both rank marriage below the highest love, and both make the philosopher's self-control the model, so the statement is right about the mechanism and wrong about the aim. Nussbaum's reading of Alcibiades, that Plato shows the reader the man who could not climb, suggests Plato is the more honest about the cost of the ideal; Seneca's <i>Letter</i> 104 on Paulina suggests he is the more livable.</p>
+        </div>
+        <table>
+          <tr><th style="width:18%">Rung</th><th>Where it is, and what it does</th></tr>
+          <tr><td>1 Point</td><td>"the same emergency and different rescues": a claim that already sorts agreement from disagreement.</td></tr>
+          <tr><td>2 Source</td><td>Plato by precise paraphrase with the dialogue and section; the short quotations are the translator's, and the reference carries the AO1.</td></tr>
+          <tr><td>3 Analysis</td><td>The three-part soul and the honoured partial success: the argument explained, not just named.</td></tr>
+          <tr><td>4 Comparison</td><td>"Seneca has no horse to fight" is the hinge; then Seneca's evidence, then "Where Plato redirects..., Seneca declines", then the reason (destination).</td></tr>
+          <tr><td>5 Evaluation</td><td>"right about the mechanism and wrong about the aim"; two scholars used to judge honesty against livability.</td></tr>
+        </table>
+        <p class="small"><b>How to adapt it.</b> For a 20-mark Seneca and Ovid question on desire as threatening, keep the Seneca rungs and replace Plato with the teacher: the threat is inside the person for Seneca and outside (incompetence, thieves) for the teacher, with 3.42 and 3.89 to 92 as the source.</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>Where each rung falls in the three model paragraphs</summary>
+      <div class="body small">
+        <table>
+          <tr><th>Rung</th><th>Sappho and Seneca</th><th>Sappho and Ovid</th><th>Plato and Seneca</th></tr>
+          <tr><td>Point</td><td>"wrong about Sappho before it is wrong about Seneca"</td><td>"only one treats it as hers"</td><td>"the same emergency and different rescues"</td></tr>
+          <tr><td>Source</td><td>Fragment 130</td><td>Fragment 31; 3.281, 283 to 284, 290</td><td><i>Phaedrus</i> 253c to 256d</td></tr>
+          <tr><td>Analysis</td><td>verb, word order, "invincible"; Carson</td><td>whose laugh; dimple and ass; Merriam</td><td>three-part soul; partial success honoured</td></tr>
+          <tr><td>Comparison</td><td>"Seneca would recognise... whereas"</td><td>"Where Sappho's poem educates..."</td><td>"Seneca has no horse to fight"; "Where Plato redirects..."</td></tr>
+          <tr><td>Evaluation</td><td>"more honest... because"; "fears" corrected</td><td>"largely right, but"; Gibson</td><td>"right about the mechanism"; Nussbaum, <i>Letter</i> 104</td></tr>
+        </table>
+      </div>
+    </details>
+
+    <div class="bookpage">
+      <div class="bpdate">Date: ____________</div>
+      <div class="bptitle">Notes 8: The comparative paragraph</div>
+      <table>
+        <tr><th style="width:22%">Rung</th><th>What goes in it</th><th style="width:34%">Sentence starters</th></tr>
+        <tr><td>1 Point</td><td>A claim that answers the question and contains both writers.</td><td>"The clearest test of the statement is..."; "Both X and Y..., and only one..."</td></tr>
+        <tr><td>2 Source</td><td>A short quotation in OCR wording with the number (Sappho, Ovid) or a precise paraphrase with the work named (Plato, Seneca).</td><td>"In Fragment 31..."; "The teacher at 3.281..."; "Plato, through Diotima, argues that... (<i>Symposium</i> 206a)"</td></tr>
+        <tr><td>3 Analysis</td><td>Technique or argument, and its effect. A scholar used for one specific point, then tested.</td><td>"The verb..."; "The word order..."; "Carson's point that..."; "Merriam's reading explains..."</td></tr>
+        <tr><td>4 Comparison</td><td>The hinge; the second writer's own evidence; the reason for the difference (genre, purpose, audience, philosophy).</td><td>"Where X..., Y..."; "whereas"; "by contrast"; "The difference is one of..."</td></tr>
+        <tr><td>5 Evaluation</td><td>A judgement with a reason; the question's loaded word tested; a second scholar agreed with or argued against.</td><td>"X's account is the more... because..."; "The statement is right about... and wrong about..."</td></tr>
+      </table>
+      <div class="rule"><b>Rule</b>Three failures cap the mark: the list (no hinge), false symmetry (agreement with no disagreement), and no judgement. Check every paragraph for all three before moving on.</div>
+    </div>
+    <label class="copyrow"><input type="checkbox" data-save="copied_method"> I have copied these notes into my book</label>
+  </section>
+
+  <!-- WRITING BUILD 1 -->
+  <section>
+    <div class="sechead"><h2>Writing build 1: finish the chain</h2><span class="mins">8 min</span></div>
+    <p class="obj">The first three rungs are given, on the teacher's thesis at 3.41 to 42. Write the <b>comparison</b> and <b>evaluation</b> rungs with any one of the other three voices, then press Check my chain. Name the writer, mark the contrast with "whereas" or "by contrast", give them a reference of their own, and end with a judgement and a reason.</p>
+    <div class="given"><span class="gl">Point (given)</span>The teacher's diagnosis of the abandoned heroines turns love into a skill that can be learnt, which is the position every other voice in the unit denies.</div>
+    <div class="given"><span class="gl">Source (given)</span>Medea, Ariadne, Phyllis and Dido were destroyed, he says, by one thing: "Not knowing how to love: your art was lacking: love lasts long through art" (3.41 to 42).</div>
+    <div class="given"><span class="gl">Analysis (given)</span>The sententia lands in the pentameter and carries the title word, <i>ars</i>: skill, craft, artifice. Four women who died for love are told they died of incompetence, and the exemplum is chosen to prove that the remedy is instruction. The mock-didactic form (Volk) makes the teacher's authority and the joke the same thing.</div>
+    <div class="rung"><span class="rname">4. Comparison (you write)</span>
+      <p class="hint">Sappho 130 ("invincible creature"), Diotima's Eros as child of Poverty (203b to e), or Seneca's Nurse: which of them would say love can be taught, and which would say the teacher has mistaken the disease for a lack of skill?</p>
+      <textarea data-save="build1_comp" data-chain="b1" placeholder="Sappho, by contrast, presents love as..."></textarea>
+    </div>
+    <div class="rung"><span class="rname">5. Evaluation (you write)</span>
+      <p class="hint">Which account of why love fails is more convincing, and because of what? A scholar here (Gibson, James, Carson, Nussbaum, Graver) lifts the AO2 level.</p>
+      <textarea data-save="build1_eval" data-chain="b1" placeholder="The teacher's account is less convincing because..., which..."></textarea>
+    </div>
+    <button type="button" class="btn checkbtn" data-check="b1">Check my chain</button>
+    <div class="feedback" id="fb_b1"></div>
+  </section>
+
+  <!-- WRITING BUILD 2 -->
+  <section>
+    <div class="sechead"><h2>Writing build 2: a full chain of your own</h2><span class="mins">12 min</span></div>
+    <p class="obj">Now all five rungs, on one of these real titles. Choose the pair or trio the title names and use the grid row that fits.</p>
+    <ol class="small">
+      <li>"Only Sappho thinks that emotions are necessary for a successful relationship." (June 2024, 30: Sappho plus at least two of Plato, Seneca, Ovid)</li>
+      <li>Assess how realistically love is portrayed in the works and ideas of any three from Sappho, Plato, Ovid and Seneca. (June 2024, 30)</li>
+      <li>Discuss to what extent you agree that Plato's and Seneca's ideals of love were different. (June 2025, 30)</li>
+      <li>Assess who represents marriage most positively: Plato, Seneca, Ovid or Sappho. (June 2022, 30)</li>
+      <li>Assess how far you agree that both Ovid and Seneca portray desire as threatening to those who experience it. (June 2024, 20)</li>
+    </ol>
+    <div class="qbox">
+      <p class="q">Plan first: the title, the grid row, the two or three quotations or references, the scholar.</p>
+      <textarea data-save="plan" placeholder="Title:  /  Row:  /  Quotations:  /  Scholar:"></textarea>
+    </div>
+    <div class="rung"><span class="rname">1. Point</span>
+      <textarea data-save="build2_point" data-chain="b2" placeholder="The clearest test of the statement is..."></textarea></div>
+    <div class="rung"><span class="rname">2. Source</span>
+      <p class="hint">OCR wording and number for Sappho or Ovid; work and section for Plato or Seneca.</p>
+      <textarea data-save="build2_source" data-chain="b2" placeholder="In Fragment ... / The teacher at 3.... / Plato, through Diotima, argues that..."></textarea></div>
+    <div class="rung"><span class="rname">3. Analysis</span>
+      <p class="hint">Name the technique or the argument. One scholar for one point.</p>
+      <textarea data-save="build2_analysis" data-chain="b2" placeholder="The technique / The argument..."></textarea></div>
+    <div class="rung"><span class="rname">4. Comparison</span>
+      <p class="hint">The hinge, the second writer's own reference, and why they differ.</p>
+      <textarea data-save="build2_comp" data-chain="b2" placeholder="Where X..., Y... The difference is one of..."></textarea></div>
+    <div class="rung"><span class="rname">5. Evaluation</span>
+      <p class="hint">A judgement with "because"; a second scholar if you can.</p>
+      <textarea data-save="build2_eval" data-chain="b2" placeholder="X's presentation is more ... because..."></textarea></div>
+    <div class="wc" data-wc="build2_all">0 words in this chain</div>
+    <button type="button" class="btn checkbtn" data-check="b2">Check my chain</button>
+    <div class="feedback" id="fb_b2"></div>
+  </section>
+
+  <!-- IMPROVE THE ANSWER -->
+  <section>
+    <div class="sechead"><h2>Improve the answer</h2><span class="mins">extension</span><span class="tagx">Extension</span></div>
+    <p class="obj">A weak paragraph and a strong one on the June 2024 title, "Only Sappho thinks that emotions are necessary for a successful relationship." Read both, read the table, then rewrite the weak paragraph in the space below.</p>
+    <div class="exem weak">
+      <h4>Weak</h4>
+      <p>Sappho thinks emotions are necessary because her poems are full of emotion. She says love shakes her and that she wants to die. Plato thinks love is about the soul and the Form of Beauty, so he is not interested in emotions. Seneca is a Stoic so he thinks emotions are bad and should be controlled. Ovid just gives advice about make-up and how to attract men, so he does not think emotions matter. So only Sappho thinks emotions are necessary, which agrees with the statement.</p>
+    </div>
+    <div class="exem strong">
+      <h4>Strong</h4>
+      <p>The statement is true of Sappho only if "emotion" means the suffering of desire, because that is what her poems record: "Love which loosens the limbs Once again shakes me!" (130), "Honestly, I want to die" (94). What the wedding songs add is the emotion a relationship is built to hold, "Honey-sweet, love is poured Over your beautiful face" (112), so for Sappho a successful marriage is one over which Aphrodite presides, and the feeling is the point. Seneca would say the opposite about the same feeling and the same institution: the man who is "too ardent a lover of his own wife is an adulterer" (via Jerome), because passion is a false judgement wherever it occurs; yet his own letter about Paulina, "for her sake I command myself to grow old" (<i>Letter</i> 104), shows a marriage held together by an attachment he does not call a passion, so Seneca thinks a rational feeling is necessary and a passionate one fatal. The teacher in Ovid is the real test case, since he demands the appearance of emotion rather than the thing: "Make us believe (it's so easy) that we're loved" (3.673) and the instruction to fake pleasure (3.797 to 802) treat feeling as a performance for a spectator, which James reads as instruction that benefits the men. The statement therefore fails on Seneca and half-fails on Ovid, who thinks the display of emotion is necessary and says nothing about its presence; what is distinctive in Sappho is not that she values emotion but that she never asks whether it is useful.</p>
+    </div>
+    <details>
+      <summary>What changed</summary>
+      <div class="body small">
+        <table>
+          <tr><th>Move</th><th>Weak</th><th>Strong</th></tr>
+          <tr><td>The loaded word</td><td>"Emotions" never defined</td><td>"Emotion" split into the suffering of desire, the feeling marriage holds, a rational attachment, and a performance</td></tr>
+          <tr><td>Evidence (AO1)</td><td>Paraphrase, no numbers; Plato and Seneca by label ("about the soul", "a Stoic")</td><td>Five short quotations with numbers; Seneca's letter and the Jerome fragment named; Ovid's later lines flagged as instruction to perform</td></tr>
+          <tr><td>Comparison</td><td>Four separate verdicts, no hinge</td><td>"Seneca would say the opposite about the same feeling and the same institution"; "The teacher... is the real test case"</td></tr>
+          <tr><td>Seneca</td><td>"Emotions are bad" (false: passions are bad, rational feelings are kept)</td><td>Rational feeling necessary, passion fatal; Paulina as the proof</td></tr>
+          <tr><td>Ovid</td><td>"Just make-up"</td><td>Appearance of emotion demanded; James named for the reading</td></tr>
+          <tr><td>Judgement</td><td>"Agrees with the statement"</td><td>Fails on Seneca, half-fails on Ovid, and a sharper claim about what is distinctive in Sappho</td></tr>
+        </table>
+      </div>
+    </details>
+    <div class="qbox">
+      <p class="q">Rewrite the weak paragraph. Keep its order (Sappho, Plato, Seneca, Ovid) but give each writer a reference, replace the four verdicts with two hinges, and end with a judgement.</p>
+      <textarea data-save="improve" data-chain="imp" placeholder="The statement is true of Sappho only if..." style="min-height:120px"></textarea>
+      <div class="wc" data-wc="improve">0 words</div>
+      <button type="button" class="btn checkbtn" data-check="imp">Check my paragraph</button>
+      <div class="feedback" id="fb_imp"></div>
+    </div>
+  </section>
+
+  <!-- SCHOLAR BANK -->
+  <section>
+    <div class="sechead"><h2>Scholar bank: one line each, by voice</h2><span class="mins">stretch</span><span class="tagx">Stretch</span></div>
+    <p class="obj">The scholars you already have in writing, reduced to the one claim you can state accurately and the pair it serves. Use the claim, then say how far the text supports it. Never attribute more than the line here.</p>
+    <div class="cards">
+      <div class="pcard"><h4>On Sappho</h4><p><b>Carson</b> (1986): desire depends on lack, the gap is usually made by a third thing, and <i>glukupikron</i> is sweet then bitter. <b>duBois</b> (1995): a desiring female subject; Helen in 16 as a woman who chooses. <b>Winkler</b> (1990): double consciousness; "that man" in 31 is a set-up to be dismissed. <b>Page</b> (1955): 31 is jealousy. <b>Lardinois</b>: many songs were performed to a group, so the "I" is not simple autobiography. <b>Parker</b> (1993): no school; adult companions. <b>Karanika</b> (2024): the wedding songs preserve girls' performance games. <b>Seaford</b> and <b>Rehm</b>: the wedding structured like a death. <b>Kurke</b> (1992): refinement as aristocratic identity. <b>Hardie</b> (2005): the Muses grant survival after death (55).</p></div>
+      <div class="pcard"><h4>On Plato</h4><p><b>Vlastos</b> (1973): the cardinal flaw, the person loved as a placeholder for qualities. <b>White</b> (1989, 1990): the defence, an image can be loved for its own sake. <b>Levy</b> (1979): love defined as desire to possess what is beautiful, so love is not itself beautiful. <b>Nussbaum</b> (1986): Alcibiades shows what the ascent costs. <b>Dover</b> (1978): the conventions of pederasty behind Pausanias. <b>Halperin</b> (1990): why Diotima is a woman. <b>Irigaray</b> (1989): procreation demoted in favour of "engendering" ideas. <b>Finkelberg</b> (1997): the lover cast as female and active.</p></div>
+      <div class="pcard"><h4>On Ovid</h4><p><b>James</b> (2008): the teacher "does not control his instruction"; the pupil is a novice courtesan; "He lets the women see too much"; Book 3 "benefits not the women but the men". <b>Merriam</b> (2011): the laugh confiscated by an appeal to vanity, to correct the power imbalance. <b>Gibson</b> (2003): the middle way between matron and prostitute; technical, inclusive advice; "nothing is lost" as a stock seducer's line. <b>Sharrock</b> (2002): femininity as a learned performance; the arming of women real and limited by what they are armed for. <b>Downing</b> (1990): anti-Pygmalion. <b>Volk</b> (2002): real didactic machinery. <b>Myerowitz</b> (1985): love as a game and a form of culture. <b>Wyke</b> (2002): the "written woman". <b>Green</b> (1982): an affront to Augustus.</p></div>
+      <div class="pcard"><h4>On Seneca (to be extended)</h4><p><b>Graver</b> (2007): passions are judgements, bad in kind not degree; the rational feelings (<i>eupatheiai</i>) explain how attachment survives. <b>Inwood</b> (2005): Greek doctrine made to speak in a Roman aristocratic register. <b>Griffin</b> (1976): the politics, friendship and self-mastery in Nero's court. <b>Edwards</b> (1993): the moralising about masculinity as performance. <b>Hadot</b> (1995): philosophy as a way of life, spiritual exercises such as <i>praemeditatio</i>. <b>Star</b> (2012) and <b>Gunderson</b> (2015): the tragedies dramatise Stoic psychology rather than departing from it.</p></div>
+    </div>
+    <div class="callout"><b>The argument to have.</b> Does any of the four love a person? Vlastos says Plato cannot; White says he can. Carson says Sappho's desire needs the person absent; 94 remembers her present. Seneca's wise man loves his friends and bears their loss with an even mind. The teacher's pupil is taught to be loved and to make a man believe he is. Any 30-mark essay on the nature of love can be built on that question with two scholars on each side.</div>
+  </section>
+
+  <!-- EXIT -->
+  <section>
+    <div class="sechead"><h2>Exit quiz, exit ticket and the grid from memory</h2><span class="mins">10 min</span></div>
+    <p class="small">Re-read your eight bookpages first; the quiz draws on all of them.</p>
+    <label class="copyrow"><input type="checkbox" data-save="reread"> I have re-read my bookpages of notes</label>
+    <div class="gate" data-gate="reread" data-msg="Tick 'I have re-read my notes' to unlock the exit quiz.">
+      <h3>Exit quiz</h3>
+      <div id="mcE"></div>
+      <input type="hidden" data-save="ex_1"><input type="hidden" data-save="ex_2"><input type="hidden" data-save="ex_3"><input type="hidden" data-save="ex_4"><input type="hidden" data-save="ex_5"><input type="hidden" data-save="ex_6"><input type="hidden" data-save="ex_7"><input type="hidden" data-save="ex_8"><input type="hidden" data-save="score_exit">
+    </div>
+    <div class="qbox">
+      <p class="q">Exit ticket: go back to your starter answer. In two sentences, what has changed in how you would describe what the four writers think love is?</p>
+      <textarea data-save="exit" placeholder="At the start I would have said... Now I would say..."></textarea>
+    </div>
+    <div class="callout">
+      <b>Homework: the grid from memory.</b> Copy the blank grid below into your book and fill every cell without looking at Notes 6, then check it against Notes 6 in a different colour. Bring the marked grid to the next lesson. Second task: learn by heart the one quotation per voice that you would use for "what love is" (Fragment 130; <i>Ars</i> 3.42; <i>Symposium</i> 200a to 201c in your own precise words; <i>Letter</i> 9 in your own precise words).
+    </div>
+    <div class="bookpage">
+      <div class="bpdate">Date: ____________</div>
+      <div class="bptitle">Notes 9: The grid from memory</div>
+      <table class="grid4 blank">
+        <tr><th style="width:12%">Question</th><th>Plato</th><th>Sappho</th><th>Ovid</th><th>Seneca</th></tr>
+        <tr><th>What love is</th><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+        <tr><th>Love and desire</th><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+        <tr><th>Desire and the body</th><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+        <tr><th>Control of desire</th><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+        <tr><th>Marriage</th><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+        <tr><th>Men and women</th><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+        <tr><th>Good and bad conduct</th><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+      </table>
+    </div>
+  </section>
+
+ </div>
+
+ <aside class="col-notes">
+   <div class="npanel">
+     <div class="nhead"><span class="ntitle">My notes</span><span class="nwc" data-wc="notes">0 words</span></div>
+     <p class="nhint">Your own space. Jot down anything as we work through the four voices: quotations, questions, pairs you find hard, things you are unsure about. It saves with the rest of your work, exports with your workbook, and your teacher can see it.</p>
+     <textarea id="notesArea" data-save="notes" placeholder="Start typing as we go..."></textarea>
+   </div>
+ </aside>
+</div>
+<script>
+(function(){
+  var KEY = "";                                  // set per-pupil after sign-in
+  var IDENTITY = null;                           // {cls, cand} from the sign-in gate
+  var mirrorTimer = null;
+  var fields = Array.prototype.slice.call(document.querySelectorAll("[data-save]"));
+  var nameInput = document.getElementById("student");
+  var saveState = document.getElementById("saveState");
+  var saveTimer = null;
+
+  var GLOSS = {
+    eros:"The Greek word for desire and for the god of desire. In Plato it is the name of the thing the Symposium sets out to define; in Sappho it is the 'creature' of Fragment 130. Latin has amor for the feeling and cupiditas for the Stoic passion of desire.",
+    glukupikron:"Sappho's compound in Fragment 130, which OCR prints as 'Bitter-sweet'. The Greek puts sweet first: glukus, sweet, then pikros, bitter. Anne Carson translates it 'sweetbitter' and argues the order matches the experience, pleasure first and then the pain of not having.",
+    praeceptor:"The 'teacher of love' (praeceptor amoris) who speaks Ovid's Ars Amatoria. A persona whom Ovid makes vain, inconsistent and self-interested, not simply Ovid's own voice; write 'the teacher says', not 'Ovid believes'. Ovid signs the book 'Ovid was my master' (3.812).",
+    ars:"Skill, technique, craft, artifice: the title word of the Ars Amatoria. 'Love lasts long through art' (3.42); 'Art imitates chance' (3.155); 'art delights in its hidden face' (3.210). The opposite of what happens to Sappho, for whom love is something done to her.",
+    cultus:"Cultivation, grooming, refinement, civilisation, all in one Latin word: the governing value of Parts II to VI of Ars 3 ('good wine comes from vines that are looked after', 3.101; 'civilisation's here', 3.127). For Seneca the same care of the body is time stolen from the mind.",
+    cupiditas:"Desire, one of the four cardinal Stoic passions (with pleasure, fear and grief). A passion is a mistaken judgement that something external is good or bad, plus an impulse to act. Love pursued as pleasure is, for Seneca, a species of cupiditas; love as friendship (amicitia) is not.",
+    assensio:"Assent: the moment the mind says 'yes' to an impression of value. For the Stoics the body's first movements (a shiver, tears, a flush) are not in our power and are not blamed; the passion begins only with assent, which is in our power and is blamed (Seneca, On Anger 2.2 to 2.4).",
+    apatheia:"Freedom from the four cardinal passions, the Stoic goal. Not numbness: the wise person keeps rational feelings (joy, wish, caution) and keeps friendship. Seneca's wise man wants a friend in order to serve him and loves him (Letter 9)."
+  };
+
+  /* ===== self-marking banks ===== */
+  var ORDER_ITEMS = [
+    "Around 630 to 570 BC: Sappho composes and performs her songs on Lesbos",
+    "416 BC: the dramatic date of Plato's Symposium, the party for Agathon's victory at the tragic festival",
+    "Around 385 to 370 BC: Plato writes the Symposium and the Phaedrus in Athens",
+    "18 BC: Augustus's marriage and adultery laws (the leges Iuliae) are passed in Rome",
+    "Around AD 2: Ovid adds Book 3, for women, to the Ars Amatoria",
+    "AD 8: Augustus relegates Ovid to Tomis on the Black Sea, for 'a poem and a mistake'",
+    "AD 40s to 64: Seneca writes On Anger, Phaedra, On the Happy Life and the Letters to Lucilius",
+    "AD 65: Seneca is forced to kill himself after the Pisonian conspiracy; Paulina opens her veins and is saved on Nero's order"
+  ];
+  var ORDER_SHOW = [4,1,6,3,0,7,2,5];            // display order of the chips (indices into ORDER_ITEMS)
+
+  var BANKS = {
+    A:[
+      {q:"In the Symposium, who argues that love is always love of something one lacks?", o:["Agathon, in his speech praising Eros","Socrates, questioning Agathon","Pausanias, on the two Aphrodites","Alcibiades, about Socrates"], a:1, why:"Symposium 200a to 201c: Socrates gets Agathon to agree that the tall man does not desire to be tall, so Eros, who loves beauty, lacks it. Diotima then builds the doctrine on that argument. Agathon's speech is the praise Socrates dismantles."},
+      {q:"Diotima's Eros is the child of:", o:["Zeus and Aphrodite","Poverty and Resource","Beauty and the Good","Ares and Aphrodite"], a:1, why:"Symposium 203b to e. From his mother Poverty he is always in need, barefoot and sleeping in doorways; from his father Resource he is always scheming for what he lacks. Love is lack made into a doctrine."},
+      {q:"Which speaker divides love between a Common and a Heavenly Aphrodite?", o:["Phaedrus","Eryximachus","Pausanias","Aristophanes"], a:2, why:"Pausanias, 180c to 185c. Common love is of women as much as boys and of the body; Heavenly love is of males, of the soul, and lasts. The common lover 'takes wing and flies away' when the body's bloom fades (183d to e)."},
+      {q:"In the Phaedrus, the charioteer and the two horses picture:", o:["the three kinds of love in Athens","the soul, with reason reining the unruly appetite at the sight of the beloved","the journey of the soul after death only","Socrates and Phaedrus walking by the river"], a:1, why:"Phaedrus 253c to 254e. The bad horse drags toward sexual pleasure; the charioteer pulls back on the reins until it is humbled, and the lover approaches with reverence. Desire is mastered and kept, not removed."},
+      {q:"According to Diotima, those who are 'pregnant in body':", o:["climb straight to Beauty itself","turn to women and have children, seeking immortality","become poets","must avoid marriage"], a:1, why:"Symposium 206c and 208e. The union of man and woman is divine because it gives mortals a share of immortality; but those pregnant in soul produce wisdom and poems, and anyone would rather have the children of Homer and Hesiod (209c to d). Marriage is the lowest rung."},
+      {q:"Vlastos's objection to Plato's theory of love is that:", o:["Plato never mentions women","the lover loves qualities in a person, so the person is loved as a placeholder on the way to the Form","Plato approves of adultery","the Symposium has too many speakers"], a:1, why:"Vlastos (1973) calls it the 'cardinal flaw'. White replies that an image can be loved for its own sake. Sappho loves Anactoria's 'lovely walk, And her gleaming face', the particular woman, which is what Vlastos says Plato cannot do."}
+    ],
+    B:[
+      {q:"Fragment 130 describes Love as:", o:["a gentle friend","'Bitter-sweet, invincible creature'","a god who can be defeated by reason","a wedding guest"], a:1, why:"'Love which loosens the limbs Once again shakes me! Bitter-sweet, invincible creature that he is.' Eros is a living agent, he returns, he is sweet then bitter (Carson: glukupikron), and he cannot be fought. The nearest Sappho comes to a definition."},
+      {q:"In Fragment 31, which of these is NOT one of the symptoms?", o:["'My tongue breaks'","'A delicate fire runs beneath my skin'","'I am greener than grass'","'my heart grows calm'"], a:3, why:"The catalogue runs: terror in the heart, tongue breaks, fire under the skin, no sight, buzzing in the ears, sweat, tremor, greener than grass, 'On the point of death'. Nothing grows calm. 'Greener than grass' is pallor, not envy."},
+      {q:"In Fragment 1 Sappho asks Aphrodite to:", o:["punish her rival","'Be my ally'","teach her to control her desire","bless her marriage"], a:1, why:"The military word treats love as a campaign, and the request shows that for Sappho desire is petitioned, not governed. Aphrodite's reply, 'if she does not love you now, she will love you soon even if she does not want to', makes desire something the god does to people."},
+      {q:"Which pair of fragments gives the cost of marriage rather than its celebration?", o:["111 and 112","104a and 114","2 and 94","16 and 47"], a:1, why:"104a: Hesperus brings 'The child, to its mother' on the evening the daughter leaves. 114: 'Virginity, virginity, where have you gone? You left me behind.' 111 and 112 are the celebrations ('Like Ares', 'the girl of your dreams')."},
+      {q:"Fragment 50, 'A handsome man is only good to look at, A good man will become handsome', matters for comparison because:", o:["it is a wedding song","it is the nearest Sappho comes to Plato's move from body to soul","it proves Sappho was married","it contradicts Fragment 31"], a:1, why:"Moral goodness ranked above looks: two lines, but decisive for any question about whether Sappho values anything above the physical, and the one place she and Diotima's ladder (210b to c) point the same way."},
+      {q:"duBois reads Helen in Fragment 16 as:", o:["a victim led astray by Aphrodite","a woman who desires and chooses, setting private love above the martial values of epic","a warning against adultery","a goddess"], a:1, why:"duBois, Sappho Is Burning (1995): Sappho turns Helen from epic's passive prize into a desiring subject who 'Abandoned her husband, The most excellent of all men'. The OCR translation also has 'led her astray', so say both readings are live."}
+    ],
+    C:[
+      {q:"'Not knowing how to love: your art was lacking: love lasts long through art' (3.41 to 42) is the teacher's diagnosis of:", o:["his own failures","why Medea, Ariadne, Phyllis and Dido were destroyed","why Roman marriages fail","why the Amazons lost"], a:1, why:"The four heroines abandoned by men were destroyed, he says, by a lack of ars. Love becomes a technique that can be learnt, which is the thesis of the book and the hinge of every comparison with Sappho, for whom love is something that happens to a person."},
+      {q:"'I'll teach girls the ways of being loved' (3.28) matters because the construction is:", o:["a question","passive: how to be the object of a man's desire, not how to love","in Greek","a quotation from Sappho"], a:1, why:"Sharrock's point: the book claims to arm women and teaches them to be desirable, so the women armed for the fight are trained to be its prize. The passive is the one-phrase proof."},
+      {q:"'Even if you're deceived, what do you lose? It's all intact: though a thousand use it, nothing's destroyed that way' (3.89 to 90). Gibson notes that this reasoning is:", o:["a Stoic doctrine","a stock seducer's line from Greek comedy and epigram","Augustus's own view","a quotation from Virgil"], a:1, why:"A reader who recognises the line knows what kind of adviser the teacher is. The woman's own reasons for refusing are never considered: the first passage for 'Ovid shows no understanding of women' (November 2020)."},
+      {q:"'Art imitates chance' (3.155) and 'art delights in its hidden face' (3.210) together say that:", o:["women should not wear make-up","the goal of the grooming programme is to look artless, so the work must be hidden","art is more important than nature","men should groom too"], a:1, why:"Myerowitz: nature is raw material, art perfects it, and the perfection consists in hiding the work. The whole programme is concealment, which is why the teacher can later call his book a manual of deceit (3.483 to 484)."},
+      {q:"Merriam's reading of 'Girls must even learn to laugh' (3.281) is that:", o:["Ovid admired women's laughter","the teacher cannot forbid women to laugh at men, so he persuades them laughing is ugly; beauty advice manages male anxiety","Roman women did not laugh in public","the passage is about the theatre"], a:1, why:"Merriam (2011): in elegy the woman and the gods of love laugh at the lover from a position of power. The Latin words for women's laughter in the passage are animal words (the braying ass). The June 2022 Source A was this passage."},
+      {q:"The one line the teacher gives Sappho in his reading list (3.331) calls her:", o:["the tenth Muse","'wanton' ('well what's more wanton?')","a teacher of girls","a poet of marriage"], a:1, why:"Quid enim lascivius illa: lascivus covers playful, wanton and lewd. The teacher reads Sappho as an erotic entertainer; set it against 94 and 96 to argue that he understands her no better than he understands women."}
+    ],
+    D:[
+      {q:"For the Stoics, a passion such as desire (cupiditas) is:", o:["any strong feeling","a mistaken judgement about value, plus an impulse to act, which the mind has assented to","a bodily event with no mental part","a gift of the gods"], a:1, why:"On Anger 2.2 to 2.4: the shiver and the tears are first movements, not in our power; the passion begins when the mind says 'yes'. So desire is something one does, not something that happens to one, which is the exact opposite of Sappho's 'invincible creature'."},
+      {q:"The Nurse in Seneca's Phaedra says:", o:["'Whoever resists love at the first and drives it out is safe and the victor'","'Love conquers all'","'Madness has conquered and now reigns'","'Be my ally'"], a:0, why:"Phaedra 132 to 135, the Stoic doctrine applied to time: resist at the first movement, because whoever nurses the sweet evil 'refuses too late to bear the yoke he has taken on'. 'Madness has conquered and now reigns' is Phaedra's own line (184 to 185), the doctrine failing."},
+      {q:"'Our school drives them all out. The Peripatetics moderate them' (Letter 116.1) means:", o:["Stoics allow moderate passions","Stoics reject moderate passion as moderate disease; Aristotle's school allows passions in due measure","Seneca was a Peripatetic","passions should be hidden"], a:1, why:"'I cannot see how any moderation of a disease can be healthy.' This is where Seneca differs most sharply from Plato, who honours the lover who does not quite ascend (Phaedrus 256c to d)."},
+      {q:"'The man who is too ardent a lover of his own wife is an adulterer' reaches us:", o:["in Seneca's Letter 104","in Jerome's Against Jovinian, a hostile Christian work about 330 years later, among material thought to come from Seneca's lost On Marriage","in Tacitus","in Ovid"], a:1, why:"Jerome, Against Jovinian 1.49 (c. AD 393), who attributes the sentence to Sextus the Pythagorean; its place in Seneca's On Marriage is a modern reconstruction from the surrounding material. Treat the maxim as evidence of the Stoic ideal of marital moderation, not as Seneca's certain words; say the transmission problem in one sentence and move on."},
+      {q:"Letter 104 shows Seneca's marriage to Paulina as:", o:["loveless","a passionate affair","an attachment that becomes a motive for self-care: 'for her sake I command myself to grow old'","a political arrangement only"], a:2, why:"'Because I know that her breath depends on mine, I begin, in caring for her, to care for myself.' With Tacitus Annals 15.63 to 64 (she opened her veins at his death) it is the strongest evidence that Stoic marriage is love redirected, not love removed. The 2024 mark scheme credits it."}
+    ],
+    P:[
+      {q:"Plato and Sappho AGREE that:", o:["marriage is the home of love","love is a desire for what one lacks","desire should be reined in by reason","women should not write poetry"], a:1, why:"Socrates' argument (200a to 201c) and Fragment 16's turn to Anactoria 'Who is not here with me'. Carson's reading of Sappho and Diotima's Eros, child of Poverty, say the same thing. They disagree about what to do with the lack."},
+      {q:"Plato and Seneca DISAGREE about:", o:["whether desire can overwhelm reason","whether the soul has parts: Plato's three-part soul against Seneca's single mind making a mistaken judgement","whether philosophers should marry","whether the body shows desire"], a:1, why:"The charioteer fights a horse; the Stoic has no horse, only an assent to refuse. From that follows the second disagreement: Plato honours partial success (Phaedrus 256c to d), Seneca rejects moderate passion (Letter 116)."},
+      {q:"Sappho and Ovid's teacher AGREE that:", o:["love is a technique","desire is a mistaken judgement","adornment matters and youth passes","a woman's laugh should be hidden"], a:2, why:"Fragment 81's garlands for Dika and 98a's headband beside the hair lessons of 3.133 to 168; Fragment 121's 'older one' beside 'the years go by like flowing waters' (3.62). They disagree about who does the loving and whose the laugh is."},
+      {q:"Seneca and Sappho share the same clinical picture of desire but differ on the response: Sappho ... and Seneca ...", o:["reins it in; petitions a god","petitions Aphrodite and submits; refuses assent and governs","laughs; weeps","marries; divorces"], a:1, why:"Fragment 31 and the Nurse's report in Phaedra 360 to 386 describe the same symptoms. Fragment 1 asks Aphrodite to 'Be my ally'; the Nurse says resist it 'at the first'. For Sappho eros is a god, for Seneca a mistake."},
+      {q:"Seneca and Ovid's teacher DISAGREE about where the danger of desire lies:", o:["both say it is in the law","for Seneca inside the person who desires; for the teacher in incompetence and, later, in deceivers and thieves","both say it is in marriage","neither thinks desire is dangerous"], a:1, why:"The teacher's diagnosis at 3.42 is a lack of art; the June 2024 Source A (433 to 454) makes the dangers smooth talkers and thieves. Seneca's danger is the assent itself. This is the core of the June 2024 20-mark answer."},
+      {q:"Which of these is a 'depends on the passage' point about Plato?", o:["Plato always praises desire","Plato never mentions women","the charioteer and Republic 3 say rein desire in, while the divine madness of Phaedrus 244a and Alcibiades' speech make it the most alive thing in the dialogue","Plato thinks love is a game"], a:2, why:"Nussbaum's point: Plato shows the reader both the ladder and the man who could not climb it. Quoting both sides and saying which weighs more in the passage you have chosen is the top-band move."}
+    ],
+    S:[
+      {q:"“Whoever resists love at the first and drives it out is safe and the victor.”", a:3, why:"The Nurse in Seneca's Phaedra (132 to 135): refuse assent at the first movement."},
+      {q:"“Art imitates chance”", a:2, why:"Ars 3.155: the goal of grooming is to look artless; the work is hidden."},
+      {q:"“Love shook my soul, Like a wind buffeting oak trees On a mountain.”", a:1, why:"Fragment 47: eros as an external natural force acting on the speaker."},
+      {q:"Love is always love of something one lacks; the tall man does not desire to be tall", a:0, why:"Socrates questioning Agathon, Symposium 200a to 201c."},
+      {q:"“The man who is too ardent a lover of his own wife is an adulterer.”", a:3, why:"Jerome's Against Jovinian, from the Seneca On Marriage material (Jerome credits Sextus): marriage is no licence for passion."},
+      {q:"“I'll teach girls the ways of being loved.”", a:2, why:"Ars 3.28: the passive construction; how to be the object of desire."},
+      {q:"The soul as a charioteer with two horses, one obedient and one unruly", a:0, why:"Phaedrus 253c to 254e: reason reins the appetite at the sight of the beloved."},
+      {q:"“Be my ally.”", a:1, why:"Fragment 1: desire petitioned, not governed; love as a campaign."},
+      {q:"The wise man wants a friend in order to serve him, loves him, and bears his loss with an even mind", a:3, why:"Letter 9: amicitia, rational attachment inside Stoic self-sufficiency."},
+      {q:"Those pregnant in body turn to women; the poems of Homer and Hesiod are children anyone would rather have", a:0, why:"Diotima, Symposium 208e to 209d: marriage as the lowest route to immortality."},
+      {q:"“Who'd believe it? Girls must even learn to laugh.”", a:2, why:"Ars 3.281: the thesis in its most extreme form; Merriam on the laugh confiscated."},
+      {q:"“Virginity, virginity, where have you gone? You left me behind.”", a:1, why:"Fragment 114: the bride's lament inside the wedding; the cost of marriage."}
+    ],
+    E:[
+      {q:"On this paper, the 20-mark and 30-mark questions:", o:["test one writer in depth","always set two or more of the four voices against each other","never mention Seneca","are optional"], a:1, why:"Every 20-mark and 30-mark question since 2020 has been a comparison. Knowledge of one voice earns at most ten marks; the comparison and the judgement earn the rest."},
+      {q:"The one-axis sort of the four voices used in this workbook is 'what happens to desire'. Which is correct?", o:["Sappho suffers it, Plato redirects it, Seneca refuses it, Ovid's teacher manufactures it","Sappho refuses it, Plato suffers it, Seneca manufactures it, Ovid redirects it","All four suffer it","All four redirect it"], a:0, why:"Fragment 130 ('invincible'); the charioteer and the ladder; the Nurse's 'resists love at the first'; 'Art imitates chance' and the obstacles of Part XIV. Start every comparison from this axis, then show where each writer contradicts himself."},
+      {q:"'Seneca fears desire' (June 2023) needs correcting because:", o:["Seneca approved of desire","for Seneca desire is a mistaken judgement that can be declined, so there is nothing to fear in it","Seneca never wrote about desire","Seneca was an Epicurean"], a:1, why:"Phaedra and the Nurse show the doctrine; Letter 116 shows its strictness; Letter 104 shows affection that is not fear. 'Fears' is the wrong verb for a man who thinks the passion is a mistake."},
+      {q:"Which pair shares the same symptoms of desire and the opposite response to them?", o:["Plato and Ovid","Sappho and Seneca","Ovid and Seneca on time","Plato and Sappho on marriage"], a:1, why:"Fragment 31 and Phaedra 360 to 386 are the same clinical picture; Sappho petitions Aphrodite and submits, Seneca refuses assent. The best 'agree, then disagree' structure in the unit."},
+      {q:"The 'hinge sentence' in a comparative paragraph is:", o:["the first sentence of the essay","the sentence that brings in the second writer with 'whereas' or 'by contrast' and gives them their own evidence","the conclusion","a quotation from a scholar"], a:1, why:"Rung 4. Without it the paragraph is a list (Failure 1). With it but with no disagreement it is false symmetry (Failure 2). With both but no judgement it is Failure 3."},
+      {q:"In the Ovid grid cells, the dagger (†) marks:", o:["lines that are mistranslated","evidence from Parts VIII to XVIII, not yet taught, to be filled in as you reach it","lines to learn by heart","lines set as Source A"], a:1, why:"For example 'What's easily given nourishes love poorly' (579), 'Often a lover's found at a husband's funeral' (431 to 432) and 'Make us believe that we're loved' (673). The shape of the whole book is on the grid now; the cells fill as we read."},
+      {q:"The June 2024 mark scheme's rule on scholars in the 30-mark essay is:", o:["scholars are not needed","no secondary sources gets the lowest mark in the level; two or more named scholars earn the second mark up","one scholar is enough for full marks","scholars count for AO1"], a:1, why:"Scholarship sits inside AO2 on this paper. Name two, use each for one specific point, and agree with or argue against at least one."},
+      {q:"Which of these is a 'depends on the passage' point about Sappho?", o:["Sappho always celebrates desire","Sappho never mentions marriage","Fragment 31 ends 'On the point of death' while Fragment 94 remembers desire satisfied on 'a soft bed'","Sappho wrote in Latin"], a:2, why:"The June 2022 question ('Sappho's poetry warns her audience to fear love') turned on this. Quote both sides and judge which weighs more; that is where evaluation comes from."}
+    ]
+  };
+  var BANK_META = {
+    A:{host:"mcA", prefix:"mcA", score:"score_A", opts:null},
+    B:{host:"mcB", prefix:"mcB", score:"score_B", opts:null},
+    C:{host:"mcC", prefix:"mcC", score:"score_C", opts:null},
+    D:{host:"mcD", prefix:"mcD", score:"score_D", opts:null},
+    P:{host:"mcP", prefix:"mcP", score:"score_P", opts:null},
+    S:{host:"mcS", prefix:"sort", score:"score_sort", opts:["Plato","Sappho","Ovid (the teacher)","Seneca"], sorter:true},
+    E:{host:"mcE", prefix:"ex", score:"score_exit", opts:null}
+  };
+
+  function esc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+  function field(id){ return document.querySelector('[data-save="'+id+'"]'); }
+  function setField(id,v){ var f=field(id); if(f){ f.value=v; } }
+
+  function renderBank(code){
+    var meta=BANK_META[code], bank=BANKS[code], host=document.getElementById(meta.host);
+    if(!host) return;
+    var html="", correct=0, answered=0;
+    bank.forEach(function(item,i){
+      var id=meta.prefix+"_"+(i+1), f=field(id), chosen=(f&&f.value!=="")?parseInt(f.value,10):-1;
+      var opts=meta.opts||item.o, done=chosen>=0;
+      if(done){ answered++; if(chosen===item.a) correct++; }
+      html+='<div class="mcq'+(meta.sorter?' sorter':'')+(done?' done':'')+'" data-bank="'+code+'" data-i="'+i+'">'
+          + '<p class="mq">'+(meta.sorter?'':(i+1)+'. ')+esc(item.q)+'</p><div class="opts">';
+      opts.forEach(function(o,k){
+        var cls="opt"; if(done){ if(k===item.a) cls+=" right"; else if(k===chosen) cls+=" wrong"; }
+        html+='<button type="button" class="'+cls+'" data-k="'+k+'"'+(done?' disabled':'')+'>'+esc(o)+'</button>';
+      });
+      html+='</div><div class="why">'+(done?(chosen===item.a?'✓ Correct. ':'✗ Not quite. ')+esc(item.why):'')+'</div></div>';
+    });
+    var scoreTxt = answered ? ("Score so far: "+correct+"/"+bank.length+(answered===bank.length?" (finished)":"")) : ("0/"+bank.length+" answered");
+    host.innerHTML='<div class="score">'+scoreTxt+'</div>'+html;
+    var sf=field(meta.score); if(sf){ var newv=answered?(correct+"/"+bank.length):""; if(sf.value!==newv){ sf.value=newv; } }
+    host.querySelectorAll(".mcq:not(.done) .opt").forEach(function(b){
+      b.addEventListener("click",function(){
+        var q=b.closest(".mcq"), i=parseInt(q.getAttribute("data-i"),10);
+        setField(meta.prefix+"_"+(i+1), b.getAttribute("data-k"));
+        renderBank(code); scheduleSave(); updateCounters();
+      });
+    });
+  }
+
+  function renderOrder(){
+    var host=document.getElementById("ord_trans"); if(!host) return;
+    var f=field("ord_trans"), seq=[]; try{ seq=f&&f.value?JSON.parse(f.value):[]; }catch(e){ seq=[]; }
+    var checked = seq.length===ORDER_ITEMS.length && (field("ord_trans_score").value!=="");
+    var html='<div class="olabel">Steps (click to add to your order)</div><div class="chips pool">';
+    ORDER_SHOW.forEach(function(idx){ if(seq.indexOf(idx)<0) html+='<button type="button" class="chip" data-idx="'+idx+'">'+esc(ORDER_ITEMS[idx])+'</button>'; });
+    if(seq.length===ORDER_ITEMS.length) html+='<span class="small">All placed. Press Check order.</span>';
+    html+='</div><div class="olabel">Your order</div><div class="chips chosen">';
+    var right=0;
+    seq.forEach(function(idx,p){
+      var cls="chip"; if(checked){ if(idx===p){ cls+=" right"; right++; } else cls+=" wrong"; }
+      html+='<span class="'+cls+'"><span class="pos">'+(p+1)+'.</span>'+esc(ORDER_ITEMS[idx])+'</span>';
+    });
+    if(!seq.length) html+='<span class="small">Nothing placed yet.</span>';
+    html+='</div><div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">'
+        +(checked?'':'<button type="button" class="btn ghost" id="ordUndo"'+(seq.length?'':' disabled')+'>Undo last</button>')
+        +(checked?'':'<button type="button" class="btn" id="ordCheck"'+(seq.length===ORDER_ITEMS.length?'':' disabled')+'>Check order</button>')
+        +(checked?'<span class="score">'+right+'/'+ORDER_ITEMS.length+' in the right position.</span><button type="button" class="btn ghost" id="ordReset">Try again</button>':'')
+        +'</div>';
+    host.innerHTML=html;
+    host.querySelectorAll(".pool .chip").forEach(function(c){ c.addEventListener("click",function(){ seq.push(parseInt(c.getAttribute("data-idx"),10)); setField("ord_trans",JSON.stringify(seq)); renderOrder(); scheduleSave(); updateCounters(); }); });
+    var u=document.getElementById("ordUndo"); if(u) u.addEventListener("click",function(){ seq.pop(); setField("ord_trans",JSON.stringify(seq)); renderOrder(); scheduleSave(); updateCounters(); });
+    var ck=document.getElementById("ordCheck"); if(ck) ck.addEventListener("click",function(){ var r=0; seq.forEach(function(idx,p){ if(idx===p) r++; }); setField("ord_trans_score", r+"/"+ORDER_ITEMS.length); renderOrder(); scheduleSave(); updateCounters(); });
+    var rs=document.getElementById("ordReset"); if(rs) rs.addEventListener("click",function(){ setField("ord_trans",""); setField("ord_trans_score",""); renderOrder(); scheduleSave(); updateCounters(); });
+  }
+
+  function refreshGates(){
+    document.querySelectorAll(".gate[data-gate]").forEach(function(g){
+      var cb=field(g.getAttribute("data-gate"));
+      g.classList.toggle("locked", !(cb&&cb.checked));
+    });
+  }
+  function renderChecks(){ Object.keys(BANKS).forEach(renderBank); renderOrder(); refreshGates(); }
+
+  function collect(){
+    var data = {__name:nameInput.value, __key:KEY};
+    fields.forEach(function(el){
+      data[el.getAttribute("data-save")] = (el.type==="checkbox") ? el.checked : el.value;
+    });
+    return data;
+  }
+  function applyData(data){
+    if(!data) return;
+    if(data.__name) nameInput.value = data.__name;
+    fields.forEach(function(el){
+      var v = data[el.getAttribute("data-save")];
+      if(v===undefined) return;
+      if(el.type==="checkbox"){ el.checked = !!v; } else { el.value = v; }
+    });
+    renderChecks();
+    updateCounters();
+  }
+  function persist(){
+    if(!IDENTITY) return;                         // nothing to save until signed in
+    try{
+      localStorage.setItem(KEY, JSON.stringify(collect()));
+      var t=new Date(), p=function(n){return String(n).padStart(2,"0");};
+      saveState.innerHTML = "Autosaved at <b>"+p(t.getHours())+":"+p(t.getMinutes())+":"+p(t.getSeconds())+"</b>";
+    }catch(e){ saveState.textContent = "Could not autosave here. Use Save answers or Backup instead."; }
+    mirrorToCloud();                              // push the same blob to the class store
+  }
+  function scheduleSave(){ if(saveTimer) clearTimeout(saveTimer); saveTimer=setTimeout(persist,600); }
+  function restore(){
+    var raw; try{ raw=localStorage.getItem(KEY); }catch(e){ raw=null; }
+    if(!raw) return;
+    try{ applyData(JSON.parse(raw)); saveState.innerHTML="Loaded your saved work. Autosave is on."; }catch(e){}
+  }
+
+  function wordCount(s){ s=(s||"").trim(); return s?s.split(/\s+/).length:0; }
+  function val(id){ var f=document.querySelector('[data-save="'+id+'"]'); return f?f.value:""; }
+  function updateCounters(){
+    document.querySelectorAll("[data-wc]").forEach(function(c){
+      var key=c.getAttribute("data-wc");
+      if(key==="build2_all"){
+        var ids=["build2_point","build2_source","build2_analysis","build2_comp","build2_eval"],n=0;
+        ids.forEach(function(id){ n+=wordCount(val(id)); });
+        c.textContent=n+" words in this chain";
+      } else { c.textContent=wordCount(val(key))+" words"; }
+    });
+    updateProgress();
+  }
+
+  function updateProgress(){
+    var bar=document.getElementById("progBar"), txt=document.getElementById("progTxt");
+    if(!bar||!txt) return;
+    var task=fields.filter(function(el){ var k=el.getAttribute("data-save"); return k!=="notes" && !/^score_|_score$/.test(k); });
+    var total=task.length, done=0;
+    task.forEach(function(el){
+      if(el.type==="checkbox"){ if(el.checked) done++; }
+      else if((el.value||"").trim()){ done++; }
+    });
+    bar.style.width=Math.round(done/total*100)+"%";
+    txt.textContent=done+"/"+total;
+  }
+
+  // ---- live AO2 chain checker (sharpened Sept 2026) ----
+  var QUOTE_RE=/["'“”‘’]/;
+  var KNOWN_QUOTES=/loosens the limbs|once again shakes me|bitter-sweet|invincible creature|the one you love|shook my soul|buffeting oak|tongue breaks|delicate fire|greener than grass|point of death|be my ally|overpower my heart|does not love you now|remember me|want to die|soft bed|longing consumes|flighty soul|rosy-fingered moon|like ares|raise the roof|girl of your dreams|honey-sweet|virginity, virginity|left me behind|trodden by the feet|child, to its mother|good man will become handsome|pierian muses|farm girl|run off to andromeda|clumsy little girl|sense of shame|for my companions|lovely walk|gleaming face|abandoned her husband|charming laughter|love lasts long through art|art was lacking|ways of being loved|playful passions|flowing waters|pluck the flower|nothing's destroyed|what do you lose|art imitates chance|hidden face|taking pains brings beauty|learn to laugh|small dimple|mangy ass|measure here|charm's in a defect|taught to cry|kiss your shoulder|go equal to the fight|naked girls|men often cheat|captivated by elegance|better procuress|more wanton|not now|the field's exhausted|healthy clothes|seven hides|easily given|unless i'm hurt|husband's funeral|bitter wives|make us believe|naked heart|ovid was my master|first hour of love|tenth cannot|madness has conquered|vicit ac regnat|flame burns|should not want|whatever you welcome|drives them all out|peripatetics|moderation of a disease|too ardent|adulterer|command myself to grow old|her breath depends|whole self|absence as a loss|low thing|slavish|brothels and the taverns|female part|abandoned their virtus|does not desire to be tall|poverty and resource|pregnant in body|children of homer|takes wing|flies away|father would a son|drags toward|pulls back on the reins|with reverence|charioteer|divine madness|as if with a father/i
+  var COMPARE_RE=/\b(where|whereas|by contrast|in contrast|unlike|while|whilst|however|on the other hand|differs?|different(?:ly)?|instead)\b/i;
+  var AUTHOR_RE=/\b(plato|diotima|symposium|phaedrus|republic|socrates|aristophanes|pausanias|alcibiades|seneca|stoic\w*|phaedra|the nurse|lucilius|paulina|letter \d+|epistle|on anger|de ira|vita beata|happy life|tranquillity|jerome|ovid|the teacher|praeceptor|ars amatoria|ars\b|sappho|fragment \d+|fr\.? ?\d+|aphrodite)/i
+  var TECH_RE=/\b(comparison|compar\w+|argument|definition|defin\w+|describ\w+|ladder|ascent|charioteer|assent|assensio|first movement|judgement|judgment|passion|sententia|pentameter|catalogue|passive|didactic|mock-didactic|exemplum|exempla|persona|the teacher|paradox|antithesis|anaphora|hinge|genre|purpose|audience|prayer|petition|curse|superlative|personif\w*|proverb|tense|plural|address|apostroph\w*|imagery|metaphor|simile|imperative|hyperbole|repetition|repeated|word order|emphatic|juxtapos\w*|symptom\w*|catalogue|lack|triangle|glukupikron|cultus|ars\b|lusus|cupiditas|apatheia|amicitia|virtus|voluptas|eros)/i
+  var SCHOLAR_RE=/\b(carson|dubois|du bois|winkler|page|lardinois|parker|karanika|seaford|rehm|hallett|stehle|kurke|hardie|vlastos|white|levy|nussbaum|dover|halperin|irigaray|finkelberg|james|merriam|gibson|sharrock|downing|volk|myerowitz|wyke|green|watson|michie|jones|chrystal|graver|inwood|griffin|edwards|hadot|star|gunderson|tacitus|jerome)\b/ig
+  var EVAL_RE=/\b(more|most|less|striking|unsettling|unflinching|honest|powerful|effective|significant|convincing|persuasive|memorable|bold|radical|visceral|moving|tender|richer|subtler|stronger|weaker|better|truer)\b/i;
+  var REASON_RE=/\b(because|since|so that|which (?:means|makes|shows|suggests)|as a result|therefore|thus|hence)\b/i;
+
+  var CHAINS={
+    b1:{fields:["build1_comp","build1_eval"], quoteGiven:true, techGiven:true, compField:"build1_comp"},
+    b2:{fields:["build2_point","build2_source","build2_analysis","build2_comp","build2_eval"], quoteGiven:false,
+        rungs:["build2_point","build2_source","build2_analysis","build2_comp","build2_eval"], techField:"build2_analysis", compField:"build2_comp"},
+    imp:{fields:["improve"], quoteGiven:false}
+  };
+
+  function uniqScholars(text){ var m=text.match(SCHOLAR_RE)||[], seen={}; m.forEach(function(s){ seen[s.toLowerCase()]=1; }); return Object.keys(seen); }
+
+  function checkChain(id){
+    var cfg=CHAINS[id], text=cfg.fields.map(val).join("  ");
+    var out=document.getElementById("fb_"+id);
+    var items=[], passes=0, total=0;
+
+    function add(ok,yesMsg,noMsg){ total++; if(ok) passes++; items.push('<li><span class="'+(ok?'yes':'miss')+'">'+(ok?'✓':'✗')+'</span> '+(ok?yesMsg:noMsg)+'</li>'); }
+    function info(msg){ items.push('<li><span class="yes">★</span> '+msg+'</li>'); }
+
+    // empties
+    var emptyRung=null;
+    if(cfg.rungs){ cfg.rungs.forEach(function(r){ if(emptyRung===null && wordCount(val(r))===0) emptyRung=r; }); }
+
+    var hasQuote = cfg.quoteGiven || QUOTE_RE.test(text) || KNOWN_QUOTES.test(text);
+    var techText = cfg.techField ? val(cfg.techField) : text;
+    var hasTech = cfg.techGiven || TECH_RE.test(techText);
+    var compText = cfg.compField ? val(cfg.compField) : text;
+    var hasCompare = COMPARE_RE.test(compText) || COMPARE_RE.test(text);
+    var hasAuthor = AUTHOR_RE.test(compText) || (cfg.compField ? false : AUTHOR_RE.test(text));
+    var hasEval = EVAL_RE.test(text);
+    var hasReason = REASON_RE.test(text);
+    var scholars = uniqScholars(text);
+
+    add(hasQuote, "You embedded a quotation.", "Embed a short quotation in quote marks from the poem.");
+    if(!cfg.techGiven) add(hasTech, "You named a technique in your analysis.", "Name the technique or the argument in the analysis rung: for the poets, the verb, the word order, the catalogue, the simile, the sententia, the passive, the exemplum, the persona; for the philosophers, the argument (lack, the ladder, the charioteer, assent, the first movement, the judgement).");
+    add(hasCompare && hasAuthor, "You compared with a named writer (Plato, Sappho, Ovid's teacher or Seneca).", hasAuthor ? "You named a writer but did not mark the contrast. Use where, whereas or by contrast." : "Name the second writer (Plato or Diotima, Sappho with a fragment number, the teacher in Ovid, Seneca or his Nurse) in the comparison rung and mark the contrast with where, whereas or by contrast.");
+    add(hasEval, "Your writing makes an evaluative judgement.", "Add an evaluative word such as more honest, more radical, bolder, more convincing.");
+    add(hasReason, "You justified your judgement.", "Justify it with because, so that or which shows.");
+    if(scholars.length>=2) info("Two scholars cited ("+scholars.join(", ")+"): that is the mark-scheme threshold for the second mark up in the level. Make sure each does work in the argument.");
+    else if(scholars.length===1) info("One scholar cited ("+scholars[0]+"). A second, agreed with or argued against, moves you up within the AO2 level.");
+    else info("No scholar yet. In a 30-mark essay that puts you at the bottom mark of your AO2 level. Try Carson, duBois, Winkler, Vlastos, White, Nussbaum, Dover, James, Merriam, Gibson, Sharrock, Graver, Inwood or Griffin.");
+
+    var verdict;
+    if(emptyRung){ verdict='<span class="miss">Some rungs are still blank. Fill every rung, then check again.</span>'; }
+    else if(passes===total){ verdict='<span class="yes">All the moves are present. This is top band shape. Now read it aloud, does it flow?</span>'; }
+    else if(passes>=Math.ceil(total/2)){ verdict="Good start. Close the gaps below to lift it toward the top band."; }
+    else { verdict="This is still mostly description. Work the missing moves below."; }
+
+    out.innerHTML='<div class="verdict">'+verdict+'</div><ul>'+items.join("")+'</ul>';
+    out.classList.add("show");
+  }
+
+  // ---- bindings ----
+  document.querySelectorAll(".annot").forEach(function(a){
+    function toggle(){
+      var box=document.getElementById(a.getAttribute("data-note"));
+      if(box){ var open=box.classList.toggle("show"); a.setAttribute("aria-expanded",open?"true":"false"); }
+    }
+    a.addEventListener("click",toggle);
+    a.addEventListener("keydown",function(e){ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); toggle(); } });
+  });
+
+  var tip=document.createElement("div"); tip.className="glossTip"; document.body.appendChild(tip);
+  var activeGloss=null;
+  function hideTip(){ tip.classList.remove("show"); activeGloss=null; }
+  function showTipFor(g){
+    var term=g.getAttribute("data-term");
+    tip.innerHTML="<b>"+g.textContent+"</b>"+(GLOSS[term]||"");
+    tip.classList.add("show");
+    var r=g.getBoundingClientRect(), tw=tip.offsetWidth, th=tip.offsetHeight;
+    var left=Math.min(r.left, window.innerWidth-tw-12); if(left<8) left=8;
+    var top=r.bottom+6;
+    if(top+th>window.innerHeight-8){ top=r.top-th-6; if(top<8) top=8; }
+    tip.style.left=left+"px"; tip.style.top=top+"px";
+    activeGloss=g;
+  }
+  document.querySelectorAll(".gloss").forEach(function(g){
+    g.setAttribute("tabindex","0"); g.setAttribute("role","button");
+    function toggle(e){ if(e){ e.stopPropagation(); } if(activeGloss===g){ hideTip(); } else { showTipFor(g); } }
+    g.addEventListener("click",toggle);
+    g.addEventListener("keydown",function(e){ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); toggle(e); } });
+  });
+  document.addEventListener("click",function(e){ if(activeGloss && !(e.target.closest && e.target.closest(".gloss"))) hideTip(); });
+  window.addEventListener("scroll",hideTip,true);
+
+  document.querySelectorAll("[data-check]").forEach(function(b){
+    b.addEventListener("click",function(){ checkChain(b.getAttribute("data-check")); });
+  });
+
+  fields.concat([nameInput]).forEach(function(el){
+    if(el.type==="hidden") return;
+    var ev=(el.type==="checkbox")?"change":"input";
+    el.addEventListener(ev,function(){ if(el.type==="checkbox") refreshGates(); scheduleSave(); updateCounters(); });
+  });
+
+  // Save answers -> readable txt
+  document.getElementById("saveBtn").addEventListener("click",function(){
+    persist();
+    var d=collect();
+    var labels={
+      starter1:"Starter 1, what Plato, Sappho and Ovid think love is", starter2:"Starter 2, what I know about Seneca",
+      copied_paper:"Notes 1 copied (the paper)", ord_trans_score:"Check 1, the four voices in time (score)",
+      paper1:"The paper, which of the seven questions June 2024 Q8 is asking",
+      copied_plato:"Notes 2 copied (Plato)", score_A:"Check 2, Plato (score)", q_plato:"Plato practice, body and mind (June 2025 10-mark opening)",
+      copied_sappho:"Notes 3 copied (Sappho)", score_B:"Check 3, Sappho (score)", q_sappho:"Sappho practice, love as lack in 16 or 96, and where it fails",
+      copied_ovid:"Notes 4 copied (Ovid)", score_C:"Check 4, Ovid (score)", q_ovid:"Ovid practice, the laugh in 3.281 and Fragment 31",
+      copied_seneca:"Notes 5 copied (Seneca sketch)", score_D:"Check 5, Seneca (score)", q_seneca:"Seneca practice, handling desire wisely (June 2024 10-mark opening)",
+      copied_grid:"Notes 6 copied (the grid)", score_sort:"Check 6, whose voice (score)", q_grid:"Grid practice, one row as one comparative sentence",
+      copied_pairs:"Notes 7 copied (the six pairs)", score_P:"Check 7, agree or disagree (score)", q_pairs:"Pair practice, my own depends-on-the-passage point",
+      copied_method:"Notes 8 copied (the comparative paragraph)",
+      build1_comp:"Build 1, Comparison rung", build1_eval:"Build 1, Evaluation rung",
+      plan:"Build 2, plan",
+      build2_point:"Build 2, Point", build2_source:"Build 2, Source", build2_analysis:"Build 2, Analysis",
+      build2_comp:"Build 2, Comparison", build2_eval:"Build 2, Evaluation",
+      improve:"Improve the answer, redraft", reread:"Re-read notes before exit quiz", score_exit:"Exit quiz (score)", exit:"Exit ticket"
+    };
+    var lines=["LOVE AND RELATIONSHIPS: THE FOUR VOICES (PLATO, SAPPHO, OVID, SENECA)",
+      "Name: "+(d.__name||"(no name given)"), "Saved: "+new Date().toLocaleString(),""];
+    Object.keys(labels).forEach(function(k){
+      var v=d[k]; if(typeof v==="boolean") v=v?"yes":"no";
+      lines.push(labels[k]+":"); lines.push((v&&String(v).trim())?v:"(blank)"); lines.push("");
+    });
+    lines.push("=========================================");
+    lines.push("MY NOTES (free notes panel):");
+    lines.push((d.notes&&String(d.notes).trim())?d.notes:"(no notes taken)");
+    lines.push("");
+    download(new Blob([lines.join("\n")],{type:"text/plain"}), "Four_Voices_Workbook_"+safeName(d.__name)+".txt");
+  });
+
+  // Backup -> json resume file
+  document.getElementById("backupBtn").addEventListener("click",function(){
+    persist();
+    download(new Blob([JSON.stringify(collect())],{type:"application/json"}), "Four_Voices_backup_"+safeName(nameInput.value)+".json");
+  });
+
+  // Restore <- json file
+  document.getElementById("restoreBtn").addEventListener("click",function(){ document.getElementById("restoreInput").click(); });
+  document.getElementById("restoreInput").addEventListener("change",function(e){
+    var file=e.target.files[0]; if(!file) return;
+    var r=new FileReader();
+    r.onload=function(){
+      try{
+        var data=JSON.parse(r.result);
+        applyData(data); persist();
+        saveState.innerHTML="Restored from your backup file. Autosave is on.";
+      }catch(err){ alert("That file could not be read. Make sure it is a Backup file from this lesson."); }
+    };
+    r.readAsText(file);
+    e.target.value="";
+  });
+
+  document.getElementById("printBtn").addEventListener("click",function(){ window.print(); });
+  document.getElementById("fontBtn").addEventListener("click",function(){ document.body.classList.toggle("easyread"); });
+
+  document.getElementById("clearBtn").addEventListener("click",function(){
+    if(!confirm("Clear all your answers on this page? This cannot be undone.")) return;
+    try{ localStorage.removeItem(KEY); }catch(e){}
+    fields.forEach(function(el){ if(el.type==="checkbox"){ el.checked=false; } else { el.value=""; } });
+    nameInput.value=IDENTITY?IDENTITY.cand:"";
+    document.querySelectorAll(".feedback").forEach(function(f){ f.classList.remove("show"); });
+    renderChecks();
+    updateCounters();
+    saveState.textContent="Cleared. Autosave is on.";
+    mirrorToCloud();                              // sync the cleared state to the class store
+  });
+
+  function safeName(n){ return (n||"student").replace(/[^a-z0-9]+/gi,"_"); }
+  function download(blob,name){
+    var url=URL.createObjectURL(blob), a=document.createElement("a");
+    a.href=url; a.download=name; document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(url); },1000);
+  }
+
+  renderChecks();
+  /* ====================================================================
+     CLOUD SYNC LAYER
+     Identity = class code + candidate name. No password, no login.
+     The pupil's whole answer-blob (collect(), including the free notes)
+     is mirrored to the shared class store so it follows them to any
+     device, and the teacher dashboard pulls every pupil for the book.
+     Save answers / Backup stay as the offline file route.
+     ==================================================================== */
+  var CLOUD = { endpoint:"https://vestigia-store.mrbeasley930.workers.dev", book:"lr-fourvoices-2026" };
+
+  function fullKey(){ return CLOUD.book + "::" + (IDENTITY ? IDENTITY.cls + "::" + IDENTITY.cand : "anon"); }
+
+  function cloudPull(key){
+    if(!CLOUD.endpoint) return Promise.resolve(null);
+    return fetch(CLOUD.endpoint + "?key=" + encodeURIComponent(key),{headers:{"x-vestigia-token":"vp_8c7103b52959b06cb55526bf"}})
+      .then(function(r){ return r.ok ? r.json() : null; })
+      .then(function(j){ return j && j.data ? j.data : null; })
+      .catch(function(){ return null; });
+  }
+  function cloudPush(key, data, extra){
+    if(!CLOUD.endpoint || !IDENTITY) return Promise.resolve(false);
+    var body = { key:key, book:CLOUD.book, data:data, savedAt:new Date().toISOString() };
+    if(extra){ for(var k in extra){ body[k]=extra[k]; } }
+    return fetch(CLOUD.endpoint, {
+      method:"POST", headers:{ "x-vestigia-token":"vp_8c7103b52959b06cb55526bf", "Content-Type":"application/json" },
+      body: JSON.stringify(body)
+    }).then(function(r){ return r.ok; }).catch(function(){ return false; });
+  }
+
+  function setSyncStatus(state){
+  try{ window.__vsBanner && window.__vsBanner(state); }catch(e){}
+    var el=document.getElementById("syncStatus"); if(!el) return;
+    var map={ saving:["Syncing…","#9a7a2e"], cloud:["✓ Saved to class store","#2c6a5f"],
+              offline:["Saved here, will sync when online","#b5651d"] };
+    var m=map[state]||map.cloud; el.textContent=m[0]; el.style.color=m[1];
+  }
+  function mirrorToCloud(){
+    if(!IDENTITY) return;
+    setSyncStatus("saving");
+    if(mirrorTimer) clearTimeout(mirrorTimer);
+    mirrorTimer=setTimeout(function(){
+      cloudPush(fullKey(), collect(), { cls:IDENTITY.cls, cand:IDENTITY.cand })
+        .then(function(ok){ setSyncStatus(ok ? "cloud" : "offline"); });
+    }, 600);
+  }
+
+  /* ---------- sign-in gate ---------- */
+  function showGate(){
+    var ov=document.createElement("div");
+    ov.id="sl-gate";
+    ov.style.cssText="position:fixed;inset:0;z-index:99999;background:rgba(28,18,30,.93);display:flex;align-items:center;justify-content:center;padding:20px;font-family:'Segoe UI',system-ui,sans-serif;";
+    ov.innerHTML =
+      '<div style="max-width:430px;width:100%;background:#fffdf9;border:1px solid #d9d2e0;border-top:6px solid #6a2c5a;border-radius:14px;padding:26px;color:#1c1a22;box-shadow:0 18px 50px rgba(0,0,0,.5);">'
+      + '<div style="font-size:22px;font-weight:700;color:#6a2c5a;">Love and Relationships: The Four Voices</div>'
+      + '<div style="font-size:13.5px;color:#5d5668;margin:4px 0 18px;">Sign in to open your work. It saves to your class store and follows you to any device.</div>'
+      + '<label style="font-size:13px;font-weight:600;color:#5d5668;">Class code</label>'
+      + '<input id="sg-cls" autocomplete="off" style="width:100%;box-sizing:border-box;margin:5px 0 13px;padding:10px;border-radius:8px;border:1px solid #d9d2e0;font-size:15px;" placeholder="e.g. 13CIV-A">'
+      + '<label style="font-size:13px;font-weight:600;color:#5d5668;">Your name</label>'
+      + '<input id="sg-cand" autocomplete="off" style="width:100%;box-sizing:border-box;margin:5px 0 4px;padding:10px;border-radius:8px;border:1px solid #d9d2e0;font-size:15px;" placeholder="e.g. Marcus">'
+      + '<div id="sg-err" style="color:#a23;font-size:12.5px;min-height:17px;margin:3px 0 8px;"></div>'
+      + '<button id="sg-go" style="width:100%;padding:12px;border:0;border-radius:8px;background:#6a2c5a;color:#fff;font-weight:700;font-size:15px;cursor:pointer;">Open my work</button>'
+      + '<div style="font-size:11.5px;color:#7a7385;margin-top:13px;line-height:1.55;">Enter your <b>name</b> (or exam candidate number). Use the <b>same name and class code as the Sappho lessons</b> so your teacher sees all your work together. Your work syncs to any device you sign in on with the same class code and name.</div>'
+      + '</div>';
+    document.body.appendChild(ov);
+    document.getElementById("sg-go").addEventListener("click", signIn);
+    ov.addEventListener("keydown", function(e){ if(e.key==="Enter"){ e.preventDefault(); signIn(); } });
+    document.getElementById("sg-cls").focus();
+  }
+
+  function signIn(){
+    var cls=(document.getElementById("sg-cls").value||"").trim().toUpperCase();
+    var cand=(document.getElementById("sg-cand").value||"").trim();
+    var err=document.getElementById("sg-err");
+    if(!cls){ err.textContent="Enter your class code."; return; }
+    if(!/^.{2,40}$/.test(cand)){ err.textContent="Please enter your name (2-40 characters)."; return; }
+    IDENTITY={ cls:cls, cand:cand };
+    KEY="vest_"+CLOUD.book+"_"+cls+"_"+cand+"_answers";
+    var go=document.getElementById("sg-go"); if(go) go.textContent="Loading…";
+    cloudPull(fullKey()).then(function(remote){
+      if(remote){ try{ localStorage.setItem(KEY, JSON.stringify(remote)); }catch(e){} }
+      var raw=null; try{ raw=localStorage.getItem(KEY); }catch(e){ raw=null; }
+      if(raw){ try{ applyData(JSON.parse(raw)); }catch(e){} }
+      var g=document.getElementById("sl-gate"); if(g && g.parentNode) g.parentNode.removeChild(g);
+      nameInput.value=IDENTITY.cand;                // the sign-in name is the name; no separate box
+      injectIdentityBar();
+      updateCounters();
+      saveState.innerHTML = remote ? "Loaded your saved work from the class store. Autosave is on." : "Signed in. Autosave is on.";
+      setSyncStatus(remote ? "cloud" : "offline");
+      if(!remote) mirrorToCloud();               // first visit: push an empty blob so the banner reflects real connectivity
+    });
+  }
+
+  function signOut(){ IDENTITY=null; location.reload(); }
+
+  function injectIdentityBar(){
+    var bar=document.createElement("div");
+    bar.id="sl-idbar";
+    bar.style.cssText="display:flex;flex-wrap:wrap;gap:10px;align-items:center;font-family:'Segoe UI',system-ui,sans-serif;font-size:13px;color:#5d5668;background:#efe9f0;border:1px solid #d9d2e0;border-radius:10px;padding:8px 13px;margin:0 0 14px;";
+    bar.innerHTML =
+      '<span>Signed in: <b style="color:#1c1a22;">'+IDENTITY.cls+' · '+IDENTITY.cand+'</b></span>'
+      + '<span id="syncStatus" style="color:#2c6a5f;font-weight:600;">✓ Saved</span>'
+      + '<span style="display:flex;align-items:center;gap:7px;"><span style="font-size:12px;color:#5d5668;">Progress</span>'
+        + '<span style="position:relative;height:14px;width:120px;background:#fff;border:1px solid #d9d2e0;border-radius:8px;overflow:hidden;"><i id="progBar" style="position:absolute;left:0;top:0;bottom:0;width:0;background:linear-gradient(90deg,#2c6a5f,#6a2c5a);transition:width .3s;"></i></span>'
+        + '<span id="progTxt" style="font-size:12px;font-weight:600;color:#1c1a22;">0/'+fields.length+'</span></span>'
+      + '<button id="sl-switch" style="margin-left:auto;background:#fff;border:1px solid #6a2c5a;color:#6a2c5a;border-radius:8px;padding:4px 11px;cursor:pointer;font:inherit;font-size:12.5px;font-weight:600;">Switch user</button>';
+    var host=document.querySelector(".col-left")||document.querySelector(".wrap")||document.body;
+    host.insertBefore(bar, host.firstChild);
+    document.getElementById("sl-switch").addEventListener("click", signOut);
+    updateProgress();
+  }
+
+  showGate();
+})();
+</script>
+
+<!-- ===== SAVE-FAILURE BANNER (added 2026-09-04) =====
+     A failed cloud save used to show only a small grey line in the toolbar,
+     so a whole class could fail to save without anyone noticing. This makes
+     it impossible to miss. It clears itself the moment a save succeeds. -->
+<script>
+window.__vsBanner = function(state){
+  try{
+    if(state === 'saving') return;   // mid-save: leave the bar exactly as it is
+    var on = (state === 'offline');
+    var b = document.getElementById('vs-savefail');
+    if(!b){
+      if(!on) return;
+      b = document.createElement('div');
+      b.id = 'vs-savefail';
+      b.setAttribute('role','alert');
+      b.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:2147483647;'
+        + 'background:#b3261e;color:#fff;font-family:Georgia,"Times New Roman",serif;'
+        + 'font-size:15px;line-height:1.5;padding:11px 18px;text-align:center;'
+        + 'box-shadow:0 3px 14px rgba(0,0,0,.45);';
+      b.innerHTML = '<b>NOT SAVED TO THE CLASS STORE.</b> Your answers are safe on this '
+        + 'computer, but they are not reaching your teacher. Put your hand up and say '
+        + 'the red bar is showing.'
+        + '<div style="font-size:12.5px;opacity:.9;margin-top:3px;">Keep working &mdash; '
+        + 'this clears itself the moment it reconnects.</div>';
+      (document.body || document.documentElement).appendChild(b);
+    }
+    b.style.display = on ? 'block' : 'none';
+    if(document.body) document.body.style.paddingTop = on ? (b.offsetHeight + 6) + 'px' : '';
+  }catch(e){}
+};
+</script>
+<script id="vs-safety-notice">
+/* Online-safety notice (6 Nov 2026). Pupils are told that the page is monitored by Smoothwall.
+   Shows a notice in the sign-in box (before the Sign in button) and a slim strip at the foot
+   of the screen. To change the wording, edit LONG and SHORT below and re-run patch_safety_notice.py:
+   it replaces this block in every listed page. */
+(function(){
+  if (window.__vsSafety) return; window.__vsSafety = true;
+  var LONG = "This page is monitored by the school's online safety system (Smoothwall). Anything you type, including in games and answer boxes, can be flagged and passed to the pastoral team. A comment made as a joke, such as 'I want to die', will be treated as serious. If something is genuinely worrying you, please talk to your form tutor, Head of Year or any member of staff.";
+  var SHORT = "Monitored by Smoothwall: anything you type can be flagged to the pastoral team. Worried about something? Talk to your tutor, Head of Year or any member of staff.";
+
+  function gateNotice(){
+    if (document.getElementById("vs-safety-gate")) return;
+    var go = document.getElementById("g-go"), cand = document.getElementById("g-cand");
+    if (!go && !cand) return;
+    var box = document.createElement("div");
+    box.id = "vs-safety-gate"; box.setAttribute("role", "note");
+    box.style.cssText = "margin:12px 0;padding:10px 12px;border:2px solid #b3261e;border-radius:10px;background:#fff4f2;color:#1a1a1a;font-family:system-ui,Segoe UI,Arial,sans-serif;font-size:14px;line-height:1.45;text-align:left;max-width:100%;box-sizing:border-box";
+    box.innerHTML = '<div style="font-weight:700;margin-bottom:4px">Before you start</div>';
+    var p = document.createElement("div"); p.textContent = LONG; box.appendChild(p);
+    if (go && go.parentNode) go.parentNode.insertBefore(box, go);
+    else cand.parentNode.appendChild(box);
+  }
+
+  function strip(){
+    if (document.getElementById("vs-safety-strip") || !document.body) return;
+    var framed = false; try { framed = window.self !== window.top; } catch(e){ framed = true; }
+    if (framed) return;   // a game shown inside an arcade page: the outer page carries the strip
+    var s = document.createElement("div");
+    s.id = "vs-safety-strip"; s.setAttribute("role", "note"); s.textContent = SHORT;
+    s.style.cssText = "position:fixed;left:0;right:0;bottom:0;z-index:40;background:#1a1a1a;color:#fff;font-family:system-ui,Segoe UI,Arial,sans-serif;font-size:12.5px;line-height:1.35;padding:5px 12px;text-align:center;border-top:2px solid #b3261e";
+    document.body.appendChild(s);
+    var css = document.createElement("style");
+    css.textContent = "body{padding-bottom:calc(var(--vs-safety-h,34px) + 4px) !important}@media print{#vs-safety-strip,#vs-safety-gate{display:none !important}}";
+    document.head.appendChild(css);
+    var lift = 0;
+    function findBar(){   // a page toolbar fixed to the bottom of the screen: sit the strip just above it
+      lift = 0;
+      var all = document.body.querySelectorAll("*");
+      for (var i = 0; i < all.length; i++) {
+        var el = all[i]; if (el === s || s.contains(el)) continue;
+        var cs = getComputedStyle(el); if (cs.position !== "fixed" || cs.display === "none" || cs.visibility === "hidden") continue;
+        var r = el.getBoundingClientRect();
+        if (r.height > 0 && r.height < innerHeight * 0.4 && r.width > innerWidth * 0.5 && r.bottom >= innerHeight - 2 && r.top < innerHeight - 2) lift = Math.max(lift, Math.round(innerHeight - r.top));
+      }
+    }
+    var fit = function(){ s.style.bottom = lift + "px"; document.documentElement.style.setProperty("--vs-safety-h", (s.offsetHeight + lift) + "px"); };
+    findBar(); fit();
+    window.addEventListener("resize", function(){ findBar(); fit(); });
+    window.addEventListener("load", function(){ findBar(); fit(); });
+  }
+
+  function run(){ gateNotice(); strip(); }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", run); else run();
+  new MutationObserver(gateNotice).observe(document.documentElement, { childList: true, subtree: true });
+})();
+</script>
+</body>
+</html>
